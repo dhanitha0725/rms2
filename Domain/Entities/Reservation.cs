@@ -1,0 +1,25 @@
+﻿namespace Domain.Entities
+{
+    public class Reservation
+    {
+        public Guid ReservationID { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime? UpdatedDate { get; set; }
+        public decimal Total { get; set; }
+        public string Status { get; set; }
+        public int UserID { get; set; }
+        public int? PackageID { get; set; }
+        public string CreatedBy { get; set; }
+        public string UpdatedBy { get; set; }
+
+        public User User { get; set; }
+        public ICollection<Payment> Payments { get; set; }
+        public ICollection<ReservedPackage> ReservedPackages { get; set; }
+        public ICollection<ReservedRoom> ReservedRooms { get; set; }
+
+
+
+    }
+}
