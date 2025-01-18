@@ -7,12 +7,12 @@
         public decimal AmountPaid { get; set; }
         public DateTime CreatedDate { get; set; }
         public string Status { get; set; }
-        public Guid ReservationID { get; set; }
+        public int ReservationID { get; set; }
         public int UserID { get; set; }
         public int InvoiceID { get; set; }
 
         public Reservation Reservation { get; set; }
         public User User { get; set; }
-        public Invoice Invoice { get; set; }
+        public ICollection<InvoicePayment> InvoicePayments { get; set; }
     }
 }

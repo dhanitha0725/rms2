@@ -2,7 +2,7 @@
 {
     public class FacilityPackage
     {
-        public Guid FacilityID { get; set; }
+        public int FacilityID { get; set; }
         public int PackageID { get; set; }
 
         public Facility Facility { get; set; }

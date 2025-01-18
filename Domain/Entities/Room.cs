@@ -6,7 +6,7 @@
         public string RoomNumber { get; set; }
         public string Type { get; set; }
         public int Capacity { get; set; }
-        public string? Status { get; set; }
+        public string Status { get; set; }
         public int? NumberOfBeds { get; set; }
         public int FacilityID { get; set; }
 

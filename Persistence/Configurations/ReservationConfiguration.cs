@@ -1,0 +1,88 @@
+﻿using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace Persistence.Configurations
+{
+    internal class ReservationConfiguration : IEntityTypeConfiguration<Reservation>
+    {
+        public void Configure(EntityTypeBuilder<Reservation> builder)
+        {
+            builder.ToTable("Reservations");
+
+            builder.HasKey(r => r.ReservationID);
+
+            builder.Property(e => e.ReservationID)
+                .HasColumnName("ReservationID")
+                .HasColumnType("int")
+                .ValueGeneratedOnAdd();
+
+            builder.Property(e => e.StartDate)
+                .HasColumnName("StartDate")
+                .HasColumnType("date")
+                .IsRequired();
+
+            builder.Property(e => e.EndDate)
+                .HasColumnName("EndDate")
+                .HasColumnType("date")
+                .IsRequired();
+
+            builder.Property(e => e.CreatedDate)
+                .HasColumnName("CreatedDate")
+                .HasColumnType("timestamp")
+                .IsRequired();
+
+            builder.Property(e => e.UpdatedDate)
+                .HasColumnName("UpdatedDate")
+                .HasColumnType("timestamp");
+
+            builder.Property(r => r.Total)
+                .HasColumnName("Total")
+                .HasColumnType("decimal(12,2)")
+                .IsRequired();
+
+            builder.Property(r => r.Status)
+                .HasColumnType("varchar(10)")
+                .HasColumnName("Status")
+                .HasMaxLength(10)
+                .IsRequired();
+
+            builder.Property(r => r.CreatedBy)
+                .HasColumnType("varchar(50)")
+                .HasColumnName("CreatedBy")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            builder.Property(r => r.UpdatedBy)
+                .HasColumnType("varchar(50)")
+                .HasColumnName("UpdatedBy")
+                .HasMaxLength(50);
+
+            // one-to-many relationship with User
+            builder.HasOne(r => r.User)
+                .WithMany(u => u.Reservations)
+                .HasForeignKey(r => r.UserID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // one-to-many relationship with Payment
+            builder.HasMany(r => r.Payments)
+                .WithOne(p => p.Reservation)
+                .HasForeignKey(p => p.ReservationID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // one-to-many relationship with ReservedPackage
+            builder.HasMany(r => r.ReservedPackages)
+                .WithOne(rp => rp.Reservation)
+                .HasForeignKey(rp => rp.ReservationID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // one-to-many relationship with ReservedRoom
+            builder.HasMany(r => r.ReservedRooms)
+                .WithOne(rr => rr.Reservation)
+                .HasForeignKey(rr => rr.ReservationID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
+        }
+    }
+}

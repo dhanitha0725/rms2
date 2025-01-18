@@ -2,7 +2,7 @@
 {
     public class User
     {
-        public int Id { get; set; }
+        public int UserId { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }
@@ -11,6 +11,7 @@
 
         public ICollection<Payment> Payments { get; set; }
         public ICollection<Reservation> Reservations { get; set; }
+        public ICollection<Document>? Documents { get; set; }
 
     }
 }

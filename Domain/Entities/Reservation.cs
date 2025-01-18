@@ -2,7 +2,7 @@
 {
     public class Reservation
     {
-        public Guid ReservationID { get; set; }
+        public int ReservationID { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public DateTime CreatedDate { get; set; }
@@ -15,9 +15,11 @@
         public string UpdatedBy { get; set; }
 
         public User User { get; set; }
-        public ICollection<Payment> Payments { get; set; }
+        public ICollection<Payment>? Payments { get; set; }
         public ICollection<ReservedPackage> ReservedPackages { get; set; }
-        public ICollection<ReservedRoom> ReservedRooms { get; set; }
+        public ICollection<ReservedRoom>? ReservedRooms { get; set; }
+        public ICollection<Invoice>? Invoices { get; set; }
+        public ICollection<Document>? Documents { get; set; }
 
 
 
