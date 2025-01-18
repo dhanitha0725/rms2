@@ -1,6 +1,7 @@
 using Persistence;
 using Serilog;
 using Serilog.Events;
+using Application;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,7 @@ try
 
     // add all layers services using dependency injection
     builder.Services
+        .AddApplication()
         .AddInfrastructure(builder.Configuration);
 
     // Configure Serilog with Seq from appsettings
