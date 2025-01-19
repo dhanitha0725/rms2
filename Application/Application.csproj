@@ -9,7 +9,6 @@
   <ItemGroup>
     <Folder Include="Abstractions\Interfaces\" />
     <Folder Include="Features\" />
-    <Folder Include="Behaviors\" />
     <Folder Include="DTOs\" />
     <Folder Include="Profiles\" />
   </ItemGroup>

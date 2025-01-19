@@ -1,4 +1,6 @@
-﻿using FluentValidation;
+﻿using Application.Behaviors;
+using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Application
@@ -10,11 +12,18 @@ namespace Application
             // reg all services in the project dynamically
             var assembly = typeof(DependencyInjection).Assembly;
 
+            // register mediator
+            services.AddMediatR(configuration => {
+                configuration.RegisterServicesFromAssembly(assembly); });
+
             // register validators using FluentValidation
             services.AddValidatorsFromAssembly(assembly);
 
             //register auto mapper
             services.AddAutoMapper(assembly);
+
+            // resigter validation pipeline
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationPipelineBehaviour<,>));
 
             return services;
         }
