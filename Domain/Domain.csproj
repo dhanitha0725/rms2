@@ -7,8 +7,4 @@
     <BaseOutputPath>bin\Debug\net8.0\</BaseOutputPath>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Common\" />
-  </ItemGroup>
-
 </Project>

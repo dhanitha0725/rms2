@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Text.Json;
+using Domain.Common;
 using FluentValidation;
 
 namespace WebAPI.Middlewares
@@ -33,42 +34,36 @@ namespace WebAPI.Middlewares
         // handle validation exceptions
         private async Task HandleValidationExceptionAsync(HttpContext context, ValidationException ex)
         {
-            _logger.LogWarning(ex, "Validation exception occured.");
+            _logger.LogWarning(ex, "Validation exception occurred.");
+
+            var validationErrors = ex.Errors.Select(error => new
+            {
+                Field = error.PropertyName,
+                Message = error.ErrorMessage
+            });
+
+            var error = new Error("VALIDATION_ERROR", "One or more validation errors occurred.");
+            var result = Result.Failure(error);
 
             context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
             context.Response.ContentType = "application/json";
 
-            var validationErrors = ex.Errors.Select(error => new
-            {
-                field = error.PropertyName,
-                Message = error.ErrorMessage
-            });
-
-            var problemDetails = new ProblemDetails
-            {
-                Status = (int)HttpStatusCode.BadRequest,
-                Type = "Validation Error",
-                Title = "Validation Error",
-                Detail = "One or more validation errors occurred."
-            };
-
             var response = new
             {
-                problemDetails.Status,
-                problemDetails.Title,
-                problemDetails.Detail,
+                result.IsSuccess,
+                result.Error.Code,
+                result.Error.Message,
                 Errors = validationErrors
             };
 
-            //convert object into json (http only transfter text not objects.)
-            var result = JsonSerializer.Serialize(response);
-            await context.Response.WriteAsync(result);
+            var jsonResponse = JsonSerializer.Serialize(response);
+            await context.Response.WriteAsync(jsonResponse);
         }
 
         // handle unknown exceptions
         private async Task HandleUnknownExceptionAsync(HttpContext context, Exception ex)
         {
-            _logger.LogError(ex, "An unexpected error occur.");
+            _logger.LogError(ex, "An unexpected error occurred.");
 
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             context.Response.ContentType = "application/json";
@@ -84,7 +79,5 @@ namespace WebAPI.Middlewares
             var result = JsonSerializer.Serialize(problemDetails);
             await context.Response.WriteAsync(result);
         }
-
-        
     }
 }
