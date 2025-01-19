@@ -2,6 +2,7 @@ using Persistence;
 using Serilog;
 using Serilog.Events;
 using Application;
+using WebAPI.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,9 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
+    // add global exception handling middleware
+    builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
+
     // add all layers services using dependency injection
     builder.Services
         .AddApplication()
@@ -49,15 +53,18 @@ try
         app.UseSwaggerUI();
     }
 
+    // specify which middleware to use
+    app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+
     // log http request
     app.UseSerilogRequestLogging(options =>
     {
-        options.EnrichDiagnosticContext = (diagnosticContext, HttpContext) =>
+        options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
         {
             // log host name, http/s protocol, request maker
-            diagnosticContext.Set("RequestHost", HttpContext.Request.Host.Value);
-            diagnosticContext.Set("RequestScheme", HttpContext.Request.Scheme);
-            diagnosticContext.Set("UserAgent", HttpContext.Request.Headers["User-Agent"]);
+            diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+            diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
+            diagnosticContext.Set("UserAgent", httpContext.Request.Headers["User-Agent"]);
         };
     });
 
