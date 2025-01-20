@@ -3,6 +3,7 @@ using Serilog;
 using Serilog.Events;
 using Application;
 using WebAPI.Middlewares;
+using Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,7 +34,8 @@ try
     // add all layers services using dependency injection
     builder.Services
         .AddApplication()
-        .AddInfrastructure(builder.Configuration);
+        .AddInfrastructure(builder.Configuration)
+        .AddIdentity(builder.Configuration);
 
     // Configure Serilog with Seq from appsettings
     builder.Host.UseSerilog((context, services, loggerConfiguration) =>
