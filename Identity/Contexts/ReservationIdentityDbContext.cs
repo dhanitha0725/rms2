@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Identity.Contexts
 {
-    public class IdentityDbContext : IdentityDbContext<ApplicationUser>
+    public class ReservationIdentityDbContext : IdentityDbContext<ApplicationUser>
     {
-        public IdentityDbContext(DbContextOptions<IdentityDbContext> options)
+        public ReservationIdentityDbContext(DbContextOptions<ReservationIdentityDbContext> options)
             : base(options)
         {
         }

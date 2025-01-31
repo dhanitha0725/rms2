@@ -21,12 +21,6 @@ namespace Identity.Services
 
         public async Task<Result> CreateUserAsync(string email, string password, string confirmPassword)
         {
-            //validate password
-            if (password != confirmPassword)
-            {
-                return Result<string>.Failure(new Error("Passwords do not match"));
-            }
-
             //check if email already exists
             var existingUser = await _userManager.FindByEmailAsync(email);
             if (existingUser != null)
@@ -52,7 +46,7 @@ namespace Identity.Services
             //generate jwt token
             var userDto = new UserDto
             {
-                UserId = user.Id,
+                UserId = int.Parse(user.Id), // Fix: Convert string to int
                 Email = user.Email,
                 Roles = await _userManager.GetRolesAsync(user)
             };
@@ -79,7 +73,7 @@ namespace Identity.Services
 
             var userDto = new UserDto
             {
-                UserId = user.Id,
+                UserId = int.Parse(user.Id), // Fix: Convert string to int
                 Email = user.Email,
                 Roles = await _userManager.GetRolesAsync(user)
             };

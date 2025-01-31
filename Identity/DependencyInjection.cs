@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Security.Cryptography.X509Certificates;
+using Microsoft.Extensions.Configuration;
 using Application.Abstractions.Interfaces;
 using Identity.Models;
 using Identity.Services;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Identity.Contexts;
+using Identity.Seeds;
 
 namespace Identity
 {
@@ -17,7 +19,7 @@ namespace Identity
             IConfiguration configuration)
         {
             //configure identity db context
-            services.AddDbContext<IdentityDbContext>(options =>
+            services.AddDbContext<ReservationIdentityDbContext>(options =>
                 options.UseNpgsql(configuration.
                     GetConnectionString("DefaultConnection")));
 
@@ -31,14 +33,18 @@ namespace Identity
                     options.Password.RequireNonAlphanumeric = true;
                     options.Password.RequiredLength = 8;
                 })
-                .AddEntityFrameworkStores<IdentityDbContext>()
+                .AddEntityFrameworkStores<ReservationIdentityDbContext>()
                 .AddDefaultTokenProviders();
 
             services.AddAuthentication();
 
-            //register authorization
+            // register authorization
             // define policies and roles
-            services.AddAuthorization();
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("AdminOnly",
+                    policy => policy.RequireRole("Admin"));
+            });
 
             services.AddSingleton<IEmailSender, NoOpEmailSender>();
 
@@ -46,6 +52,16 @@ namespace Identity
             services.AddScoped<IJwtService, JwtService>();
 
             return services;
+        }
+
+
+        public static async Task SeedDataAsync(IServiceProvider serviceProvider)
+        {
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var services = scope.ServiceProvider;
+
+            //seed roles
+            await SeedRoles.SeedAsync(services);
         }
     }
 }

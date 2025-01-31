@@ -23,7 +23,7 @@ namespace Identity.Services
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.NameIdentifier, user.UserId)
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()) // Convert UserId to string
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
