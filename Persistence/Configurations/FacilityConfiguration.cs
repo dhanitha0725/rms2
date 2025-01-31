@@ -32,6 +32,11 @@ namespace Persistence.Configurations
                 .HasColumnName("Attributes")
                 .HasColumnType("jsonb");
 
+            builder.Property(e => e.Location)
+                .HasColumnName("Location")
+                .HasColumnType("varchar(100)")
+                .IsRequired();
+
             builder.Property(e => e.Description)
                 .HasColumnName("Description")
                 .HasColumnType("varchar(500)");

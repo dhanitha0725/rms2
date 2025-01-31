@@ -44,10 +44,6 @@ namespace Persistence.Configurations
                 .HasColumnType("varchar(30)")
                 .HasColumnName("Role")
                 .IsRequired();
-
-
-
-
         }
     }
 }
