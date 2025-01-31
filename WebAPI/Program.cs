@@ -37,8 +37,8 @@ try
         .AddInfrastructure(builder.Configuration)
         .AddIdentity(builder.Configuration);
 
-    // Configure Serilog with Seq from appsettings
-    builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+// Configure Serilog with Seq from appsettings
+builder.Host.UseSerilog((context, services, loggerConfiguration) =>
         loggerConfiguration
             .ReadFrom.Configuration(context.Configuration)
             .ReadFrom.Services(services)

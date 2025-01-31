@@ -42,7 +42,7 @@ namespace WebAPI.Middlewares
                 Message = error.ErrorMessage
             });
 
-            var error = new Error("VALIDATION_ERROR", "One or more validation errors occurred.");
+            var error = new Error( "One or more validation errors occurred.");
             var result = Result.Failure(error);
 
             context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
@@ -51,7 +51,6 @@ namespace WebAPI.Middlewares
             var response = new
             {
                 result.IsSuccess,
-                result.Error.Code,
                 result.Error.Message,
                 Errors = validationErrors
             };
