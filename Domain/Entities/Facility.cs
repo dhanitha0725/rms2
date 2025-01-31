@@ -6,6 +6,7 @@
         public string FacilityName { get; set; }
         public string FacilityType { get; set; }
         public string? Attributes { get; set; } // JSON type
+        public string Location { get; set; }
         public string? Description { get; set; }
         public string? Status { get; set; }
         public string? CreatedBy { get; set; }
