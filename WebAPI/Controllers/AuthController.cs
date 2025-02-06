@@ -1,4 +1,5 @@
 ﻿using Application.DTOs;
+using Application.Features.LogCustomer;
 using Application.Features.RegisterCustomer;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -30,7 +31,21 @@ namespace WebAPI.Controllers
                 return BadRequest(result);
             }
             return Ok(new {Token = result.Value});
+        }
 
+        /// <summary>
+        /// Log in a customer
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
+        {
+            var command = new LoginCommand { LoginDto = loginDto };
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+            {
+                return Unauthorized(result);
+            }
+            return Ok(new { Token = result.Value });
         }
     }
 }
