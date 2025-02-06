@@ -33,7 +33,7 @@ namespace Identity.Services
                 _configuration["JwtSettings:Issuer"],
                 _configuration["JwtSettings:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(30),
+                expires: DateTime.Now.AddYears(1),
                 signingCredentials: creds
             );
 

@@ -12,14 +12,20 @@ namespace Identity.Services
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IJwtService _jwtService;
 
-        public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IJwtService jwtService)
+        public AuthService(
+            UserManager<ApplicationUser> userManager, 
+            SignInManager<ApplicationUser> signInManager, 
+            IJwtService jwtService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _jwtService = jwtService;
         }
 
-        public async Task<Result> CreateUserAsync(string email, string password, string confirmPassword)
+        public async Task<Result> CreateUserAsync(
+            string email, 
+            string password, 
+            string confirmPassword)
         {
             //check if email already exists
             var existingUser = await _userManager.FindByEmailAsync(email);
@@ -28,14 +34,20 @@ namespace Identity.Services
                 return Result<string>.Failure(new Error("Email already exists"));
             }
 
-            //create user
+            //check password is matching
+            if (password != confirmPassword)
+            {
+                return Result<string>.Failure(new Error("Password is not matched."));
+            }
+
+            //create ApplicationUser
             var user = new ApplicationUser
             {
                 Email = email,
                 UserName = email
             };
 
-            //create user in the database
+            //create user in the database (commit changes)
             var result = await _userManager.CreateAsync(user, password);
 
             if (!result.Succeeded)
@@ -43,14 +55,15 @@ namespace Identity.Services
                 return Result<string>.Failure(new Error("Failed to create user"));
             }
 
-            //generate jwt token
+            // create user entity
             var userDto = new UserDto
             {
-                UserId = int.Parse(user.Id), // Fix: Convert string to int
+                UserId = user.Id, 
                 Email = user.Email,
                 Roles = await _userManager.GetRolesAsync(user)
             };
 
+            //generate jwt token
             var token = _jwtService.GenerateJwtToken(userDto);
             return Result<string>.Success(token);
         }
@@ -73,7 +86,7 @@ namespace Identity.Services
 
             var userDto = new UserDto
             {
-                UserId = int.Parse(user.Id), // Fix: Convert string to int
+                UserId = user.Id, // Fix: Keep UserId as string
                 Email = user.Email,
                 Roles = await _userManager.GetRolesAsync(user)
             };

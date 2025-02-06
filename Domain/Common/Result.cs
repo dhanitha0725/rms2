@@ -11,7 +11,7 @@
             Error = error;
         }
 
-        public static Result Success()
+        public static Result Success(IEnumerable<Entities.User> users)
         {
             return new Result(true, null);
         }

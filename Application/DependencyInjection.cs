@@ -22,8 +22,9 @@ namespace Application
             //register auto mapper
             services.AddAutoMapper(assembly);
 
-            // resigter validation pipeline
+            // register validation pipeline
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationPipelineBehaviour<,>));
+
 
             return services;
         }

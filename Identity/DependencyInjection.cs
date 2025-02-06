@@ -1,5 +1,4 @@
-﻿using System.Security.Cryptography.X509Certificates;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Application.Abstractions.Interfaces;
 using Identity.Models;
 using Identity.Services;

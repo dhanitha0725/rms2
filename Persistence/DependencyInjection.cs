@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Persistence.DbContexts;
 using Microsoft.EntityFrameworkCore;
+using Application.Abstractions.Interfaces;
+using Persistence.Repositories;
 
 namespace Persistence
 {
@@ -11,6 +13,10 @@ namespace Persistence
         {
             services.AddDbContext<ReservationDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+
+            services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
+
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             return services;
         }

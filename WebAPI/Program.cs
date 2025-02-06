@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // logs data collected during the app startup (using serilog)
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
+    .MinimumLevel.Debug()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .MinimumLevel.Override("System", LogEventLevel.Warning)
     .Enrich.FromLogContext()
@@ -37,14 +37,15 @@ try
         .AddInfrastructure(builder.Configuration)
         .AddIdentity(builder.Configuration);
 
-// Configure Serilog with Seq from appsettings
-builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+    // Configure Serilog with Seq from appsettings
+    builder.Host.UseSerilog((context, services, loggerConfiguration) =>
         loggerConfiguration
             .ReadFrom.Configuration(context.Configuration)
             .ReadFrom.Services(services)
             .Enrich.FromLogContext()
             .WriteTo.Seq(
-                serverUrl: context.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341"));
+                serverUrl: context.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341")
+            .Destructure.ByTransforming<Exception>(ex => new { ex.Message, ex.StackTrace })); //disable printing logging details in stack trace and cmd
 
     var app = builder.Build();
 

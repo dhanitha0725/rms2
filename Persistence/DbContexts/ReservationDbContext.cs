@@ -1,10 +1,9 @@
-﻿using Application.Abstractions.Interfaces;
-using Domain.Entities;
+﻿using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Persistence.DbContexts
 {
-    public class ReservationDbContext : DbContext, IReservationDbContext
+    public class ReservationDbContext : DbContext
     {
         public ReservationDbContext(DbContextOptions<ReservationDbContext> options) : base(options)
         {

@@ -9,9 +9,9 @@ namespace Identity.Seeds
         public static async Task SeedAsync(IServiceProvider serviceProvider)
         {
             var roleManager =
-                serviceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<IdentityRole>>();
+                serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = serviceProvider
-                .GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
+                .GetRequiredService<UserManager<ApplicationUser>>();
 
             // add roles
             string[] roleNames = { "Admin", "Customer" };
