@@ -74,7 +74,7 @@ namespace Identity.Services
             var user = await _userManager.FindByEmailAsync(email);
             if (user == null)
             {
-                return Result<string>.Failure(new Error("User not found"));
+                return Result<string>.Failure(new Error("Invalid username or password"));
             }
 
             //check password
@@ -86,7 +86,7 @@ namespace Identity.Services
 
             var userDto = new UserDto
             {
-                UserId = user.Id, // Fix: Keep UserId as string
+                UserId = user.Id,
                 Email = user.Email,
                 Roles = await _userManager.GetRolesAsync(user)
             };
