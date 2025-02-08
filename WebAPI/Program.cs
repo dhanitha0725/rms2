@@ -80,6 +80,10 @@ try
 
     app.UseHttpsRedirection();
 
+    var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+
+    app.UseAuthentication();
+
     app.UseAuthorization();
 
     app.MapControllers();

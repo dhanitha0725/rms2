@@ -2,6 +2,7 @@
 using Application.DTOs;
 using Domain.Common;
 using Identity.Models;
+//using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Identity;
 
 namespace Identity.Services
@@ -98,6 +99,50 @@ namespace Identity.Services
         public Task<bool> IsEmailUniqueAsync(string email)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<Result<string>> AddUserAsync(
+            string email, 
+            string password, 
+            string role)
+        {
+            //allowed roles
+            var allowedRoles = new List<string> { 
+                "Admin", 
+                "Employee",
+                "Accountant",
+                "Hostel" };
+
+            if (!allowedRoles.Contains(role))
+            {
+                return Result<string>.Failure(new Error("Invalid role"));
+            }
+
+            //check if user already exists
+            var existingUser = await _userManager.FindByEmailAsync(email);
+            if (existingUser != null)
+            {
+                return Result<string>.Failure(new Error("User already exists"));
+            }
+
+            //create ApplicationUser
+            var user = new ApplicationUser
+            {
+                Email = email,
+                UserName = email
+            };
+
+            //create user in the database (commit changes)
+            var result = await _userManager.CreateAsync(user, password);
+            if (!result.Succeeded)
+            {
+                return Result<string>.Failure(new Error("Failed to create user"));
+            }
+
+            // assign role to the user
+            await _userManager.AddToRoleAsync(user, role);
+
+            return Result<string>.Success("User created successfully");
         }
     }
 }

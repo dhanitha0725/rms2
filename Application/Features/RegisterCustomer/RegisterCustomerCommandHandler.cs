@@ -37,11 +37,19 @@ namespace Application.Features.RegisterCustomer
             RegisterCustomerCommand request,
             CancellationToken cancellationToken)
         {
-            using var transaction = new TransactionScope(
-                TransactionScopeAsyncFlowOption.Enabled);
+            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
 
-                // Create identity user
-                var identityResult = await _authService.CreateUserAsync(
+            var userExists = await _userRepository.ExistsAsync(u =>
+                u.Email == request.RegisterCustomerDto.Email, cancellationToken);
+
+            if (userExists)
+            {
+                _logger.Warning($"User with email {request.RegisterCustomerDto.Email} already exists.");
+                return Result<string>.Failure(new Error("User already exists."));
+            }
+
+            // Create identity user
+            var identityResult = await _authService.CreateUserAsync(
                     request.RegisterCustomerDto.Email,
                     request.RegisterCustomerDto.Password,
                     request.RegisterCustomerDto.ConfirmPassword);
