@@ -1,0 +1,11 @@
+﻿using Application.DTOs;
+using Domain.Common;
+using MediatR;
+
+namespace Application.Features.AddUser
+{
+    public class AddUserCommand : IRequest<Result<string>>, IBaseRequest
+    {
+        public AddUserDto AddUserDto { get; set; }
+    }
+}
