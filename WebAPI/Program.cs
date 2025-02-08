@@ -71,13 +71,20 @@ try
         };
     });
 
+    // seed roles and admin user
+    //using (var scope = app.Services.CreateScope())
+    //{
+    //    var services = scope.ServiceProvider;
+    //    await Identity.DependencyInjection.SeedDataAsync(services);
+    //}
+
     app.UseHttpsRedirection();
 
     app.UseAuthorization();
 
     app.MapControllers();
 
-    app.Run();
+    await app.RunAsync();
 
 }
 catch (Exception ex)

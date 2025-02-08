@@ -53,10 +53,9 @@ namespace Identity
             return services;
         }
 
-
         public static async Task SeedDataAsync(IServiceProvider serviceProvider)
         {
-            await using var scope = serviceProvider.CreateAsyncScope();
+            using var scope = serviceProvider.CreateAsyncScope();
             var services = scope.ServiceProvider;
 
             //seed roles
