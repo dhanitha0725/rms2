@@ -8,9 +8,7 @@ namespace Application.Profiles
     {
         public FacilityMappingProfile()
         {
-            // map add facility dto to facility
-            CreateMap<AddFacilityDto, Facility>()
-                .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => (string?)null));
+            CreateMap<AddFacilityDto, Facility>();
         }
     }
 }
