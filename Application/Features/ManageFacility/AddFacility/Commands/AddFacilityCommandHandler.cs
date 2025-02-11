@@ -6,16 +6,16 @@ using Domain.Common;
 using Domain.Entities;
 using Serilog;
 
-namespace Application.Features.AddFacility.Commands
+namespace Application.Features.ManageFacility.AddFacility.Commands
 {
-    public class AddFacilityCommandHandler : 
+    public class AddFacilityCommandHandler :
         IRequestHandler<AddFacilityCommand, Result<int>>
     {
         private readonly IGenericRepository<Facility, int> _facilityRepository;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger _logger;
-    
+
 
         public AddFacilityCommandHandler(
             IGenericRepository<Facility, int> facilityRepository,
@@ -30,7 +30,7 @@ namespace Application.Features.AddFacility.Commands
         }
 
         public async Task<Result<int>> Handle(
-            AddFacilityCommand request, 
+            AddFacilityCommand request,
             CancellationToken cancellationToken)
         {
             var facility = _mapper.Map<Facility>(request.FacilityDto);

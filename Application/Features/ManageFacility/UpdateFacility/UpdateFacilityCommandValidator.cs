@@ -1,33 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Application.Features.AddFacility.Commands;
-using FluentValidation;
+﻿using FluentValidation;
 
-namespace Application.Features.ManageFacility.Commands
+namespace Application.Features.ManageFacility.UpdateFacility
 {
-    public class AddFacilityCommandValidator : AbstractValidator<AddFacilityCommand>
+    public class UpdateFacilityCommandValidator : AbstractValidator<UpdateFacilityCommand>
     {
-        public AddFacilityCommandValidator()
+        public UpdateFacilityCommandValidator()
         {
-            RuleFor(p => p.FacilityDto.FacilityName)
+            RuleFor(p => p.UpdateFacilityDto.FacilityName)
                 .NotEmpty().WithMessage("{PropertyName} is required.")
                 .NotNull()
                 .MaximumLength(50).WithMessage("{PropertyName} must not exceed 50 characters.");
-            
-            RuleFor(p => p.FacilityDto.FacilityType)
+
+            RuleFor(p => p.UpdateFacilityDto.FacilityType)
                 .NotEmpty().WithMessage("{PropertyName} is required.")
                 .NotNull()
                 .MaximumLength(50).WithMessage("{PropertyName} must not exceed 50 characters.");
-            
-            RuleFor(p => p.FacilityDto.Location)
+
+            RuleFor(p => p.UpdateFacilityDto.Location)
                 .NotEmpty().WithMessage("{PropertyName} is required.")
                 .NotNull()
                 .MaximumLength(50).WithMessage("{PropertyName} must not exceed 50 characters.");
-            
-            RuleFor(p => p.FacilityDto.Description)
+
+            RuleFor(p => p.UpdateFacilityDto.Description)
                 .MaximumLength(200).WithMessage("{PropertyName} must not exceed 200 characters.");
         }
     }

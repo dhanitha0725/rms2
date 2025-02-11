@@ -10,15 +10,8 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class AuthController(IMediator mediator) : ControllerBase
     {
-        private readonly IMediator _mediator;
-
-        public AuthController(IMediator mediator)
-        {
-            _mediator = mediator;
-        }
-
         /// <summary>
         /// Register a new customer
         /// </summary>
@@ -26,7 +19,7 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterCustomerDto registerCustomerDto )
         {
             var command = new RegisterCustomerCommand { RegisterCustomerDto = registerCustomerDto };
-            var result = await _mediator.Send(command);
+            var result = await mediator.Send(command);
 
             if (!result.IsSuccess)
             {
@@ -42,7 +35,7 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
             var command = new LoginCommand { LoginDto = loginDto };
-            var result = await _mediator.Send(command);
+            var result = await mediator.Send(command);
 
             if (!result.IsSuccess)
             {
@@ -59,7 +52,7 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> AddUser([FromBody] AddUserDto addUserDto)
         {
             var command = new AddUserCommand { AddUserDto = addUserDto };
-            var result = await _mediator.Send(command);
+            var result = await mediator.Send(command);
             if (!result.IsSuccess)
             {
                 return BadRequest(result);
