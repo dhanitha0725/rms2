@@ -7,14 +7,14 @@ using Serilog;
 
 namespace Application.Features.ManageFacility.UpdateFacility
 {
-    public class UpdateFacilityCommandHandler (
-        IGenericRepository<Facility, int> facilityRepository,
-        IUnitOfWork unitOfWork,
-        ILogger logger) :
-        IRequestHandler<UpdateFacilityCommand, Result<string>>
+    public class UpdateFacilityCommandHandler(
+            IGenericRepository<Facility, int> facilityRepository,
+            IUnitOfWork unitOfWork,
+            ILogger logger) :
+            IRequestHandler<UpdateFacilityCommand, Result<string>>
     {
         public async Task<Result<string>> Handle(
-            UpdateFacilityCommand request, 
+            UpdateFacilityCommand request,
             CancellationToken cancellationToken)
         {
             var facility = await facilityRepository.GetByIdAsync(request.FacilityId, cancellationToken);
@@ -26,7 +26,7 @@ namespace Application.Features.ManageFacility.UpdateFacility
 
             // Update the facility entity
             facility.FacilityName = request.UpdateFacilityDto.FacilityName;
-            facility.FacilityType = request.UpdateFacilityDto.FacilityType;
+            //facility.FacilityType = new FacilityType { TypeName = request.UpdateFacilityDto.FacilityType };
             facility.Location = request.UpdateFacilityDto.Location;
             facility.Description = request.UpdateFacilityDto.Description;
             facility.Status = request.UpdateFacilityDto.Status;

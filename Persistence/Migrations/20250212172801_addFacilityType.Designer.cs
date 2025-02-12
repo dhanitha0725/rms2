@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Persistence.DbContexts;
@@ -11,9 +12,11 @@ using Persistence.DbContexts;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(ReservationDbContext))]
-    partial class ReservationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250212172801_addFacilityType")]
+    partial class addFacilityType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -82,9 +85,6 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(100)")
                         .HasColumnName("FacilityName");
 
-                    b.Property<int>("FacilityTypeId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasColumnType("varchar(100)")
@@ -95,8 +95,6 @@ namespace Persistence.Migrations
                         .HasColumnName("Status");
 
                     b.HasKey("FacilityID");
-
-                    b.HasIndex("FacilityTypeId");
 
                     b.ToTable("Facilities", (string)null);
                 });
@@ -133,28 +131,6 @@ namespace Persistence.Migrations
                     b.HasKey("FacilityTypeId");
 
                     b.ToTable("FacilityType", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            FacilityTypeId = 1,
-                            TypeName = "Auditorium"
-                        },
-                        new
-                        {
-                            FacilityTypeId = 2,
-                            TypeName = "Bungalow"
-                        },
-                        new
-                        {
-                            FacilityTypeId = 3,
-                            TypeName = "Hall"
-                        },
-                        new
-                        {
-                            FacilityTypeId = 4,
-                            TypeName = "Hostel"
-                        });
                 });
 
             modelBuilder.Entity("Domain.Entities.Invoice", b =>
@@ -521,17 +497,6 @@ namespace Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Facility", b =>
-                {
-                    b.HasOne("Domain.Entities.FacilityType", "FacilityType")
-                        .WithMany("Facilities")
-                        .HasForeignKey("FacilityTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("FacilityType");
-                });
-
             modelBuilder.Entity("Domain.Entities.FacilityPackage", b =>
                 {
                     b.HasOne("Domain.Entities.Facility", "Facility")
@@ -676,11 +641,6 @@ namespace Persistence.Migrations
                     b.Navigation("FacilityPackages");
 
                     b.Navigation("Rooms");
-                });
-
-            modelBuilder.Entity("Domain.Entities.FacilityType", b =>
-                {
-                    b.Navigation("Facilities");
                 });
 
             modelBuilder.Entity("Domain.Entities.Invoice", b =>

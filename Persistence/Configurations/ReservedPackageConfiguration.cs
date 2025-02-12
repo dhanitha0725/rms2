@@ -21,13 +21,13 @@ namespace Persistence.Configurations
             builder.HasOne(rp => rp.Package)
                 .WithMany(p => p.ReservedPackages)
                 .HasForeignKey(rp => rp.PackageID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // one-to-many relationship between ReservedPackage and Reservation
             builder.HasOne(rp => rp.Reservation)
                 .WithMany(r => r.ReservedPackages)
                 .HasForeignKey(rp => rp.ReservationID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

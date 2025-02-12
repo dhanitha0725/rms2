@@ -4,7 +4,8 @@
     {
         public int FacilityID { get; set; }
         public string FacilityName { get; set; }
-        public string FacilityType { get; set; }
+        public int FacilityTypeId { get; set; }
+        public FacilityType FacilityType { get; set; }
         public string? Attributes { get; set; } // JSON type
         public string Location { get; set; }
         public string? Description { get; set; }

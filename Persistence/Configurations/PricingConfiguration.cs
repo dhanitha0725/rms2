@@ -33,7 +33,7 @@ namespace Persistence.Configurations
             builder.HasOne(e => e.Package)
                 .WithMany(e => e.Pricings)
                 .HasForeignKey(e => e.PackageID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -11,10 +11,11 @@ namespace Application.Features.ManageFacility.AddFacility.Commands
                 .NotNull()
                 .MaximumLength(50).WithMessage("{PropertyName} must not exceed 50 characters.");
 
-            RuleFor(p => p.FacilityDto.FacilityType)
+            RuleFor(p => p.FacilityDto.FacilityTypeId)
+                .GreaterThan(0).WithMessage("Invalid facility type.")
                 .NotEmpty().WithMessage("{PropertyName} is required.")
-                .NotNull()
-                .MaximumLength(50).WithMessage("{PropertyName} must not exceed 50 characters.");
+                .NotNull();
+
 
             RuleFor(p => p.FacilityDto.Location)
                 .NotEmpty().WithMessage("{PropertyName} is required.")
