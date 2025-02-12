@@ -1,4 +1,4 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.UserDtos;
 using Application.Features.AddUser;
 using Application.Features.LogCustomer;
 using Application.Features.RegisterCustomer;

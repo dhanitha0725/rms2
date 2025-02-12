@@ -1,4 +1,4 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.FacilityDtos;
 using Domain.Common;
 using MediatR;
 

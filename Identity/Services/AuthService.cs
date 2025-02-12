@@ -1,5 +1,5 @@
 ﻿using Application.Abstractions.Interfaces;
-using Application.DTOs;
+using Application.DTOs.UserDtos;
 using Domain.Common;
 using Identity.Models;
 //using Microsoft.AspNet.Identity;
@@ -7,29 +7,18 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Identity.Services
 {
-    public class AuthService : IAuthService
+    public class AuthService(
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
+        IJwtService jwtService) : IAuthService
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly IJwtService _jwtService;
-
-        public AuthService(
-            UserManager<ApplicationUser> userManager, 
-            SignInManager<ApplicationUser> signInManager, 
-            IJwtService jwtService)
-        {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _jwtService = jwtService;
-        }
-
         public async Task<Result> CreateUserAsync(
             string email, 
             string password, 
             string confirmPassword)
         {
             //check if email already exists
-            var existingUser = await _userManager.FindByEmailAsync(email);
+            var existingUser = await userManager.FindByEmailAsync(email);
             if (existingUser != null)
             {
                 return Result<string>.Failure(new Error("Email already exists"));
@@ -49,7 +38,7 @@ namespace Identity.Services
             };
 
             //create user in the database (commit changes)
-            var result = await _userManager.CreateAsync(user, password);
+            var result = await userManager.CreateAsync(user, password);
 
             if (!result.Succeeded)
             {
@@ -61,25 +50,25 @@ namespace Identity.Services
             {
                 UserId = user.Id, 
                 Email = user.Email,
-                Roles = await _userManager.GetRolesAsync(user)
+                Roles = await userManager.GetRolesAsync(user)
             };
 
             //generate jwt token
-            var token = _jwtService.GenerateJwtToken(userDto);
+            var token = jwtService.GenerateJwtToken(userDto);
             return Result<string>.Success(token);
         }
 
         public async Task<Result<string>> LoginAsync(string email, string password)
         {
             //find user by email
-            var user = await _userManager.FindByEmailAsync(email);
+            var user = await userManager.FindByEmailAsync(email);
             if (user == null)
             {
                 return Result<string>.Failure(new Error("Invalid username or password"));
             }
 
             //check password
-            var result = await _signInManager.CheckPasswordSignInAsync(user, password, false);
+            var result = await signInManager.CheckPasswordSignInAsync(user, password, false);
             if (!result.Succeeded)
             {
                 return Result<string>.Failure(new Error("Invalid username or password"));
@@ -89,10 +78,10 @@ namespace Identity.Services
             {
                 UserId = user.Id,
                 Email = user.Email,
-                Roles = await _userManager.GetRolesAsync(user)
+                Roles = await userManager.GetRolesAsync(user)
             };
 
-            var token = _jwtService.GenerateJwtToken(userDto);
+            var token = jwtService.GenerateJwtToken(userDto);
             return Result<string>.Success(token);
         }
 
@@ -119,7 +108,7 @@ namespace Identity.Services
             }
 
             //check if user already exists
-            var existingUser = await _userManager.FindByEmailAsync(email);
+            var existingUser = await userManager.FindByEmailAsync(email);
             if (existingUser != null)
             {
                 return Result<string>.Failure(new Error("User already exists"));
@@ -133,14 +122,14 @@ namespace Identity.Services
             };
 
             //create user in the database (commit changes)
-            var result = await _userManager.CreateAsync(user, password);
+            var result = await userManager.CreateAsync(user, password);
             if (!result.Succeeded)
             {
                 return Result<string>.Failure(new Error("Failed to create user"));
             }
 
             // assign role to the user
-            await _userManager.AddToRoleAsync(user, role);
+            await userManager.AddToRoleAsync(user, role);
 
             return Result<string>.Success("User created successfully");
         }

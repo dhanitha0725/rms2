@@ -1,6 +1,6 @@
-﻿namespace Application.DTOs
+﻿namespace Application.DTOs.FacilityDtos
 {
-    public class UpdateFacilityDto
+    public class AddFacilityDto
     {
         public string FacilityName { get; set; }
         public string FacilityType { get; set; }

@@ -15,6 +15,7 @@ namespace Persistence
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
             services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
+            services.AddScoped<IFacilityRepository, FacilityRepository>();
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
