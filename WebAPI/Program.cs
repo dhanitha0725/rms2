@@ -37,6 +37,15 @@ try
         .AddInfrastructure(builder.Configuration)
         .AddIdentity(builder.Configuration);
 
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("ReactClient",
+            builder => builder
+                .WithOrigins("http://localhost:3000")
+                .AllowAnyMethod()
+                .AllowAnyHeader());
+    });
+
     // Configure Serilog with Seq from appsettings
     builder.Host.UseSerilog((context, services, loggerConfiguration) =>
         loggerConfiguration

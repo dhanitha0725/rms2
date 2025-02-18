@@ -1,4 +1,5 @@
 ﻿using Application.DTOs.FacilityDtos;
+using Application.Features.AddFacilityType;
 using Application.Features.ManageFacility.AddFacility.Commands;
 using Application.Features.ManageFacility.GetFacilityTypes;
 using Application.Features.ManageFacility.UpdateFacility;
@@ -16,7 +17,7 @@ namespace WebAPI.Controllers
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFacility([FromBody] AddFacilityDto addFacilityDto)
         {
-            var command = new AddFacilityCommand { FacilityDto = addFacilityDto };
+            var command = new AddFacilityCommand(addFacilityDto);
             var result = await mediator.Send(command);
 
             if (!result.IsSuccess)
@@ -27,7 +28,19 @@ namespace WebAPI.Controllers
 
             return Ok(new { FacilityId = result.Value });
         }
-        
+
+        [HttpPost("new-facility-type")]
+        public async Task<IActionResult> AddNewFacilityType([FromBody] AddFacilityTypeDto addFacilityTypeDto)
+        {
+            var command = new AddFacilityTypeCommand(addFacilityTypeDto);
+            var result = await mediator.Send(command);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { Error = result.Error.Message });
+            }
+            return Ok(new { FacilityTypeId = result.Value });
+        }
+
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateFacility([FromRoute]int id, [FromBody] UpdateFacilityDto updateFacilityDto)
@@ -48,7 +61,7 @@ namespace WebAPI.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetFacilityTypes()
         {
-            var query = new FacilityTypeQuery();
+            var query = new GetFacilityTypeQuery();
             var result = await mediator.Send(query);
             if (!result.IsSuccess)
             {
@@ -56,5 +69,9 @@ namespace WebAPI.Controllers
             }
             return Ok(result.Value);
         }
+
+
+
+
     }
 }
