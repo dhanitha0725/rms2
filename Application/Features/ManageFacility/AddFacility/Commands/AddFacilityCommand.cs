@@ -4,8 +4,7 @@ using MediatR;
 
 namespace Application.Features.ManageFacility.AddFacility.Commands
 {
-    public class AddFacilityCommand : IRequest<Result<int>>
+    public record AddFacilityCommand (AddFacilityDto FacilityDto) : IRequest<Result<int>>
     {
-        public AddFacilityDto FacilityDto { get; set; }
     }
 }

@@ -10,30 +10,50 @@ namespace Application.Features.ManageFacility.AddFacility.Commands
 {
     public class AddFacilityCommandHandler (
         IGenericRepository<Facility, int> facilityRepository,
+        IGenericRepository<FacilityType, int> facilityTypeRepository,
         IMapper mapper,
         IUnitOfWork unitOfWork,
-        ILogger logger) :
-        IRequestHandler<AddFacilityCommand, Result<int>>
+        ILogger logger) 
+        : IRequestHandler<AddFacilityCommand, Result<int>>
     {
-
         public async Task<Result<int>> Handle(
             AddFacilityCommand request,
             CancellationToken cancellationToken)
         {
-            var facility = mapper.Map<Facility>(request.FacilityDto);
+            await unitOfWork.BeginTransactionAsync(cancellationToken);
 
-            facility.CreatedDate = DateTime.UtcNow;
+            try
+            {
+                //check facility type exists
+                var typeExists = await facilityTypeRepository.ExistsAsync(
+                    ft => ft.FacilityTypeId == request.FacilityDto.FacilityTypeId,
+                    cancellationToken);
 
-            // serialize attributes
-            facility.Attributes = JsonSerializer.Serialize(
-                request.FacilityDto.Attributes);
+                if (!typeExists)
+                {
+                    return Result<int>.Failure(new Error("Invalid facility type"));
+                }
 
-            await facilityRepository.AddAsync(facility, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+                // Create facility
+                var facility = mapper.Map<Facility>(request.FacilityDto);
+                facility.FacilityTypeId = request.FacilityDto.FacilityTypeId;
+                facility.CreatedDate = DateTime.UtcNow;
+                // Serialize attributes
+                facility.Attributes = JsonSerializer.Serialize(request.FacilityDto.Attributes);
 
-            logger.Information("New Facility Added with Id: {FacilityId}", facility.FacilityID);
+                await facilityRepository.AddAsync(facility, cancellationToken);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result<int>.Success(facility.FacilityID);
+                logger.Information("New Facility Added with Id: {FacilityId}", facility.FacilityID);
+
+                return Result<int>.Success(facility.FacilityID);
+            }
+            catch (Exception ex)
+            {
+                await unitOfWork.RollbackTransactionAsync(cancellationToken);
+                logger.Error(ex, "Error adding new facility");
+                throw;
+            }
         }
     }
 }

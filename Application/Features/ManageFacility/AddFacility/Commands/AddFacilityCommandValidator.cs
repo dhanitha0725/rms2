@@ -6,24 +6,25 @@ namespace Application.Features.ManageFacility.AddFacility.Commands
     {
         public AddFacilityCommandValidator()
         {
-            RuleFor(p => p.FacilityDto.FacilityName)
-                .NotEmpty().WithMessage("{PropertyName} is required.")
-                .NotNull()
-                .MaximumLength(50).WithMessage("{PropertyName} must not exceed 50 characters.");
+            RuleFor(x => x.FacilityDto).NotNull().WithMessage("Facility details are required.");
 
-            RuleFor(p => p.FacilityDto.FacilityTypeId)
-                .GreaterThan(0).WithMessage("Invalid facility type.")
-                .NotEmpty().WithMessage("{PropertyName} is required.")
-                .NotNull();
+            When(x => x.FacilityDto != null, () =>
+            {
+                RuleFor(x => x.FacilityDto.FacilityName)
+                    .NotEmpty().WithMessage("Facility name is required.");
 
+                RuleFor(x => x.FacilityDto.Attributes)
+                    .NotNull().WithMessage("Attributes are required.");
 
-            RuleFor(p => p.FacilityDto.Location)
-                .NotEmpty().WithMessage("{PropertyName} is required.")
-                .NotNull()
-                .MaximumLength(50).WithMessage("{PropertyName} must not exceed 50 characters.");
+                RuleFor(x => x.FacilityDto.Location)
+                    .NotEmpty().WithMessage("Location is required.");
 
-            RuleFor(p => p.FacilityDto.Description)
-                .MaximumLength(200).WithMessage("{PropertyName} must not exceed 200 characters.");
+                RuleFor(x => x.FacilityDto.Description)
+                    .NotEmpty().WithMessage("Description is required.");
+
+                RuleFor(x => x.FacilityDto.Status)
+                    .NotEmpty().WithMessage("Status is required.");
+            });
         }
     }
 }
