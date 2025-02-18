@@ -33,7 +33,7 @@ namespace Persistence.Configurations
 
             builder.Property(e => e.CreatedDate)
                 .HasColumnName("CreatedDate")
-                .HasColumnType("timestamp");
+                .HasColumnType("timestamp with time zone");
 
             builder.Property(e => e.Location)
                 .HasColumnName("Location")

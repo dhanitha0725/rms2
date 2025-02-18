@@ -1,20 +1,57 @@
 ﻿using Application.Abstractions.Interfaces;
+using Microsoft.EntityFrameworkCore.Storage;
 using Persistence.DbContexts;
 
 namespace Persistence
 {
-    public class UnitOfWork : IUnitOfWork
+    public sealed class UnitOfWork (ReservationDbContext context) : IUnitOfWork
     {
-        private readonly ReservationDbContext _context;
+        private IDbContextTransaction? _transaction;
 
-        public UnitOfWork(ReservationDbContext context)
+        public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
         {
-            _context = context;
+            if (_transaction != null)
+            {
+                throw new InvalidOperationException("A transaction is already in progress.");
+            }
+
+            _transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        }
+
+        public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            if (_transaction != null)
+            {
+                await _transaction.RollbackAsync(cancellationToken);
+                await _transaction.DisposeAsync();
+                _transaction = null;
+            }
         }
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken)
         {
-            await _context.SaveChangesAsync(cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
+            if (_transaction != null)
+            {
+                await _transaction.CommitAsync(cancellationToken);
+                await _transaction.DisposeAsync();
+                _transaction = null;
+            }
+        }
+
+        public void Dispose()
+        {
+            _transaction?.Dispose();
+            context.Dispose();
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (_transaction != null)
+            {
+                await _transaction.DisposeAsync();
+            }
+            await context.DisposeAsync();
         }
     }
 }
