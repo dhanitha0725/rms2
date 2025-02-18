@@ -4,5 +4,5 @@ using MediatR;
 
 namespace Application.Features.ManageFacility.GetFacilityTypes
 {
-    public record FacilityTypeQuery : IRequest<Result<List<FacilityTypeDto>>>;
+    public class GetFacilityTypeQuery: IRequest<Result<List<GetFacilityTypeDto>>>;
 }
