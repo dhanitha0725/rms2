@@ -1,9 +1,9 @@
-﻿using System.Text.Json;
-using Application.DTOs.FacilityDtos;
+﻿using Application.DTOs.FacilityDtos;
 using Application.Features.ManageFacility.AddFacility.Commands;
 using Application.Features.ManageFacility.AddFacilityType;
 using Application.Features.ManageFacility.GetFacilityTypes;
 using Application.Features.ManageFacility.UpdateFacility;
+using Application.Features.ManageFacility.UploadImages;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,7 +33,6 @@ namespace WebAPI.Controllers
             });
         }
 
-
         [HttpPost("new-facility-type")]
         public async Task<IActionResult> AddNewFacilityType([FromBody] AddFacilityTypeDto addFacilityTypeDto)
         {
@@ -46,9 +45,24 @@ namespace WebAPI.Controllers
             return Ok(new { FacilityTypeId = result.Value });
         }
 
+        [HttpPost("{facilityId}/images")]
+        public async Task<IActionResult> AddFacilityImages(
+            [FromRoute] int facilityId,
+            [FromForm] AddFacilityImagesDto dto)
+        {
+            var command = new AddFacilityImagesCommand(facilityId, dto);
+            var result = await mediator.Send(command);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { Error = result.Error.Message });
+            }
+            return Ok(new { ImageUrls = result.Value });
+        }
+
+
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateFacility([FromRoute]int id, [FromBody] UpdateFacilityDto updateFacilityDto)
+        public async Task<IActionResult> UpdateFacility([FromRoute]int id, [FromBody] UpdateFacilityDto updateFacilityDto, string facilityId)
         {
             var command = new UpdateFacilityCommand
             {
@@ -74,9 +88,5 @@ namespace WebAPI.Controllers
             }
             return Ok(result.Value);
         }
-
-
-
-
     }
 }
