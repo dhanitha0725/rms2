@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 
-namespace Application.Features.AddFacilityType
+namespace Application.Features.ManageFacility.AddFacilityType
 {
     public class AddFacilityTypeCommandValidator : AbstractValidator<AddFacilityTypeCommand>
     {

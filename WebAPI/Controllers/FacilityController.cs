@@ -1,6 +1,7 @@
-﻿using Application.DTOs.FacilityDtos;
-using Application.Features.AddFacilityType;
+﻿using System.Text.Json;
+using Application.DTOs.FacilityDtos;
 using Application.Features.ManageFacility.AddFacility.Commands;
+using Application.Features.ManageFacility.AddFacilityType;
 using Application.Features.ManageFacility.GetFacilityTypes;
 using Application.Features.ManageFacility.UpdateFacility;
 using MediatR;
@@ -14,20 +15,24 @@ namespace WebAPI.Controllers
     public class FacilityController(IMediator mediator) : ControllerBase
     {
         [HttpPost]
-        //[Authorize(Roles = "Admin")]
+        // [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFacility([FromBody] AddFacilityDto addFacilityDto)
         {
+            // Create command with DTO and images
             var command = new AddFacilityCommand(addFacilityDto);
             var result = await mediator.Send(command);
 
             if (!result.IsSuccess)
             {
-                //return BadRequest(result);
                 return BadRequest(new { Error = result.Error.Message });
             }
 
-            return Ok(new { FacilityId = result.Value });
+            return Ok(new
+            {
+                Facility = result.Value
+            });
         }
+
 
         [HttpPost("new-facility-type")]
         public async Task<IActionResult> AddNewFacilityType([FromBody] AddFacilityTypeDto addFacilityTypeDto)

@@ -4,6 +4,7 @@ using Serilog.Events;
 using Application;
 using WebAPI.Middlewares;
 using Identity;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,13 +38,15 @@ try
         .AddInfrastructure(builder.Configuration)
         .AddIdentity(builder.Configuration);
 
+    // Configure CORS
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("ReactClient",
-            builder => builder
-                .WithOrigins("http://localhost:3000")
+            corsPolicyBuilder => corsPolicyBuilder
+                .WithOrigins("http://localhost:5173")
                 .AllowAnyMethod()
-                .AllowAnyHeader());
+                .AllowAnyHeader()
+                .AllowCredentials());
     });
 
     // Configure Serilog with Seq from appsettings
@@ -54,7 +57,7 @@ try
             .Enrich.FromLogContext()
             .WriteTo.Seq(
                 serverUrl: context.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341")
-            .Destructure.ByTransforming<Exception>(ex => new { ex.Message, ex.StackTrace })); //disable printing logging details in stack trace and cmd
+            .Destructure.ByTransforming<Exception>(ex => new { ex.Message, ex.StackTrace })); 
 
     var app = builder.Build();
 
@@ -64,6 +67,9 @@ try
         app.UseSwagger();
         app.UseSwaggerUI();
     }
+
+    // Move CORS middleware before other middleware
+    app.UseCors("ReactClient");
 
     // specify which middleware to use
     app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
@@ -79,6 +85,9 @@ try
             diagnosticContext.Set("UserAgent", httpContext.Request.Headers["User-Agent"]);
         };
     });
+
+    // Apply CORS policy
+    app.UseCors("ReactClient");
 
     // seed roles and admin user
     //using (var scope = app.Services.CreateScope())

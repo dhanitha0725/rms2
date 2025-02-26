@@ -4,7 +4,7 @@ using Domain.Entities;
 using MediatR;
 using Serilog;
 
-namespace Application.Features.AddFacilityType
+namespace Application.Features.ManageFacility.AddFacilityType
 {
     public class AddFacilityTypeCommandHandler (
         IGenericRepository<FacilityType, int> facilityTypeRepository,
