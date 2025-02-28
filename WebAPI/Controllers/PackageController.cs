@@ -14,7 +14,6 @@ namespace WebAPI.Controllers
             [FromRoute] int facilityId,
             [FromBody] AddPackageDto packageDto)
         {
-            // Provide a default id (0) for new packages.
             var command = new AddPackageCommand(facilityId, packageDto);
             var result = await mediator.Send(command);
             if (!result.IsSuccess)
