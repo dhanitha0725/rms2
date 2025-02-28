@@ -10,5 +10,6 @@ namespace Application.Abstractions.Interfaces
         Task UpdateAsync(T entity, CancellationToken cancellationToken = default);
         Task DeleteAsync(Tid id, CancellationToken cancellationToken = default);
         Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken);
+        Task<T?> AddRangeAsync (IEnumerable<T> entities, CancellationToken cancellationToken = default);
     }
 }

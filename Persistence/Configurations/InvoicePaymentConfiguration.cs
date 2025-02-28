@@ -15,12 +15,12 @@ namespace Persistence.Configurations
             builder.HasOne(ip => ip.Payment)
                 .WithMany(p => p.InvoicePayments)
                 .HasForeignKey(ip => ip.PaymentID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(ip => ip.Invoice)
                 .WithMany(i => i.InvoicePayments)
                 .HasForeignKey(ip => ip.InvoiceID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

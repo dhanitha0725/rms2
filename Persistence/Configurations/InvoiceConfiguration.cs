@@ -38,7 +38,7 @@ namespace Persistence.Configurations
             builder.HasOne(i => i.Reservation)
                 .WithMany(r => r.Invoices)
                 .HasForeignKey(i => i.ReservationID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

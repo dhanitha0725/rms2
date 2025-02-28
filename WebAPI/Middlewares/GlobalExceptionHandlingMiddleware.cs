@@ -6,15 +6,8 @@ using FluentValidation;
 
 namespace WebAPI.Middlewares
 {
-    public class GlobalExceptionHandlingMiddleware : IMiddleware
+    public class GlobalExceptionHandlingMiddleware (Serilog.ILogger logger) : IMiddleware
     {
-        private readonly ILogger<GlobalExceptionHandlingMiddleware> _logger;
-
-        public GlobalExceptionHandlingMiddleware(ILogger<GlobalExceptionHandlingMiddleware> logger)
-        {
-            _logger = logger;
-        }
-
         public async Task InvokeAsync(HttpContext context, RequestDelegate next)
         {
             try
@@ -34,7 +27,7 @@ namespace WebAPI.Middlewares
         // handle validation exceptions
         private async Task HandleValidationExceptionAsync(HttpContext context, ValidationException ex)
         {
-            _logger.LogWarning(ex, "Validation exception occurred.");
+            logger.Warning (ex, "Validation exception occurred.");
 
             var validationErrors = ex.Errors.Select(error => new
             {
@@ -62,7 +55,7 @@ namespace WebAPI.Middlewares
         // handle unknown exceptions
         private async Task HandleUnknownExceptionAsync(HttpContext context, Exception ex)
         {
-            _logger.LogError(ex, "An unexpected error occurred.");
+            logger.Error(ex, "An unexpected error occurred.");
 
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             context.Response.ContentType = "application/json";

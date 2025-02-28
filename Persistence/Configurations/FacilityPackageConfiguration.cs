@@ -15,12 +15,12 @@ namespace Persistence.Configurations
             builder.HasOne(fp => fp.Facility)
                 .WithMany(f => f.FacilityPackages)
                 .HasForeignKey(fp => fp.FacilityID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(fp => fp.Package)
                 .WithMany(p => p.FacilityPackages)
                 .HasForeignKey(fp => fp.PackageID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

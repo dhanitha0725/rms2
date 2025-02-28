@@ -69,11 +69,9 @@ namespace Persistence.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("Attributes");
 
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("CreatedDate");
 
                     b.Property<string>("Description")
                         .HasColumnType("varchar(500)")
@@ -84,10 +82,8 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(100)")
                         .HasColumnName("FacilityName");
 
-                    b.Property<string>("FacilityType")
-                        .IsRequired()
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("FacilityType");
+                    b.Property<int>("FacilityTypeId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Location")
                         .IsRequired()
@@ -95,15 +91,12 @@ namespace Persistence.Migrations
                         .HasColumnName("Location");
 
                     b.Property<string>("Status")
-                        .HasColumnType("text");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("Status");
 
                     b.HasKey("FacilityID");
+
+                    b.HasIndex("FacilityTypeId");
 
                     b.ToTable("Facilities", (string)null);
                 });
@@ -121,6 +114,70 @@ namespace Persistence.Migrations
                     b.HasIndex("PackageID");
 
                     b.ToTable("FacilityPackages", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.FacilityType", b =>
+                {
+                    b.Property<int>("FacilityTypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("FacilityTypeID");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FacilityTypeId"));
+
+                    b.Property<string>("TypeName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("FacilityTypeId");
+
+                    b.ToTable("FacilityType", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            FacilityTypeId = 1,
+                            TypeName = "Auditorium"
+                        },
+                        new
+                        {
+                            FacilityTypeId = 2,
+                            TypeName = "Bungalow"
+                        },
+                        new
+                        {
+                            FacilityTypeId = 3,
+                            TypeName = "Hall"
+                        },
+                        new
+                        {
+                            FacilityTypeId = 4,
+                            TypeName = "Hostel"
+                        });
+                });
+
+            modelBuilder.Entity("Domain.Entities.Image", b =>
+                {
+                    b.Property<int>("ImageID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ImageID"));
+
+                    b.Property<int>("FacilityID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.HasKey("ImageID");
+
+                    b.HasIndex("FacilityID");
+
+                    b.ToTable("Images", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Invoice", b =>
@@ -487,18 +544,29 @@ namespace Persistence.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Facility", b =>
+                {
+                    b.HasOne("Domain.Entities.FacilityType", "FacilityType")
+                        .WithMany("Facilities")
+                        .HasForeignKey("FacilityTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FacilityType");
+                });
+
             modelBuilder.Entity("Domain.Entities.FacilityPackage", b =>
                 {
                     b.HasOne("Domain.Entities.Facility", "Facility")
                         .WithMany("FacilityPackages")
                         .HasForeignKey("FacilityID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Domain.Entities.Package", "Package")
                         .WithMany("FacilityPackages")
                         .HasForeignKey("PackageID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Facility");
@@ -506,12 +574,23 @@ namespace Persistence.Migrations
                     b.Navigation("Package");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Image", b =>
+                {
+                    b.HasOne("Domain.Entities.Facility", "Facility")
+                        .WithMany("Images")
+                        .HasForeignKey("FacilityID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Facility");
+                });
+
             modelBuilder.Entity("Domain.Entities.Invoice", b =>
                 {
                     b.HasOne("Domain.Entities.Reservation", "Reservation")
                         .WithMany("Invoices")
                         .HasForeignKey("ReservationID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Reservation");
@@ -522,13 +601,13 @@ namespace Persistence.Migrations
                     b.HasOne("Domain.Entities.Invoice", "Invoice")
                         .WithMany("InvoicePayments")
                         .HasForeignKey("InvoiceID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Domain.Entities.Payment", "Payment")
                         .WithMany("InvoicePayments")
                         .HasForeignKey("PaymentID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Invoice");
@@ -547,7 +626,7 @@ namespace Persistence.Migrations
                     b.HasOne("Domain.Entities.User", "User")
                         .WithMany("Payments")
                         .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Reservation");
@@ -560,7 +639,7 @@ namespace Persistence.Migrations
                     b.HasOne("Domain.Entities.Package", "Package")
                         .WithMany("Pricings")
                         .HasForeignKey("PackageID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Package");
@@ -582,13 +661,13 @@ namespace Persistence.Migrations
                     b.HasOne("Domain.Entities.Package", "Package")
                         .WithMany("ReservedPackages")
                         .HasForeignKey("PackageID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Domain.Entities.Reservation", "Reservation")
                         .WithMany("ReservedPackages")
                         .HasForeignKey("ReservationID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Package");
@@ -601,13 +680,13 @@ namespace Persistence.Migrations
                     b.HasOne("Domain.Entities.Reservation", "Reservation")
                         .WithMany("ReservedRooms")
                         .HasForeignKey("ReservationID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Domain.Entities.Room", "Room")
                         .WithMany("ReservedRooms")
                         .HasForeignKey("RoomID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Reservation");
@@ -620,7 +699,7 @@ namespace Persistence.Migrations
                     b.HasOne("Domain.Entities.Facility", "Facility")
                         .WithMany("Rooms")
                         .HasForeignKey("FacilityID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Facility");
@@ -630,7 +709,14 @@ namespace Persistence.Migrations
                 {
                     b.Navigation("FacilityPackages");
 
+                    b.Navigation("Images");
+
                     b.Navigation("Rooms");
+                });
+
+            modelBuilder.Entity("Domain.Entities.FacilityType", b =>
+                {
+                    b.Navigation("Facilities");
                 });
 
             modelBuilder.Entity("Domain.Entities.Invoice", b =>

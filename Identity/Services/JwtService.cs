@@ -2,7 +2,7 @@
 using System.Security.Claims;
 using System.Text;
 using Application.Abstractions.Interfaces;
-using Application.DTOs;
+using Application.DTOs.UserDtos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 

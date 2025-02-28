@@ -44,13 +44,13 @@ namespace Persistence.Configurations
             builder.HasOne(p => p.Reservation)
                 .WithMany(r => r.Payments)
                 .HasForeignKey(p => p.ReservationID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // One-to-many relationship between Payment and User
             builder.HasOne(p => p.User)
                 .WithMany(u => u.Payments)
                 .HasForeignKey(p => p.UserID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

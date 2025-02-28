@@ -18,6 +18,8 @@ namespace Persistence
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+            services.AddScoped<IGoogleDriveService, GoogleDriveService>();
+
             return services;
         }
     }

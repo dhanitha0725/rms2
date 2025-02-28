@@ -48,13 +48,13 @@ namespace Persistence.Configurations
             builder.HasOne(e => e.Facility)
                 .WithMany(e => e.Rooms)
                 .HasForeignKey(e => e.FacilityID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // one-to-many relationship between Room and ReservedRoom
             builder.HasMany(e => e.ReservedRooms)
                 .WithOne(e => e.Room)
                 .HasForeignKey(e => e.RoomID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
 
 

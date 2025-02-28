@@ -21,13 +21,13 @@ namespace Persistence.Configurations
             builder.HasOne(rr => rr.Reservation)
                 .WithMany(r => r.ReservedRooms)
                 .HasForeignKey(rr => rr.ReservationID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // one-to-many relationship between ReservedRoom and Room
             builder.HasOne(rr => rr.Room)
                 .WithMany(r => r.ReservedRooms)
                 .HasForeignKey(rr => rr.RoomID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

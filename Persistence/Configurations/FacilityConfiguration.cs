@@ -23,14 +23,17 @@ namespace Persistence.Configurations
                 .HasColumnType("varchar(100)")
                 .IsRequired();
 
-            builder.Property(e => e.FacilityType)
-                .HasColumnName("FacilityType")
-                .HasColumnType("varchar(100)")
-                .IsRequired();
-
             builder.Property(e => e.Attributes)
                 .HasColumnName("Attributes")
                 .HasColumnType("jsonb");
+
+            builder.Property(e => e.Status)
+                .HasColumnName("Status")
+                .HasColumnType("varchar(50)");
+
+            builder.Property(e => e.CreatedDate)
+                .HasColumnName("CreatedDate")
+                .HasColumnType("timestamp with time zone");
 
             builder.Property(e => e.Location)
                 .HasColumnName("Location")
@@ -40,6 +43,11 @@ namespace Persistence.Configurations
             builder.Property(e => e.Description)
                 .HasColumnName("Description")
                 .HasColumnType("varchar(500)");
+
+            builder.HasOne(f => f.FacilityType)
+                .WithMany(ft => ft.Facilities)
+                .HasForeignKey(f => f.FacilityTypeId);
+
         }
     }
 }
