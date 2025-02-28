@@ -7,6 +7,7 @@ namespace Persistence
     public sealed class UnitOfWork (ReservationDbContext context) : IUnitOfWork
     {
         private IDbContextTransaction? _transaction;
+        //private IDbContextTransaction? _transaction;
 
         public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
         {
@@ -16,6 +17,17 @@ namespace Persistence
             }
 
             _transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        }
+
+        public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            if (_transaction == null)
+            {
+                throw new InvalidOperationException("No transaction to commit.");
+            }
+            await _transaction.CommitAsync(cancellationToken);
+            await _transaction.DisposeAsync();
+            _transaction = null;
         }
 
         public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
@@ -31,12 +43,6 @@ namespace Persistence
         public async Task SaveChangesAsync(CancellationToken cancellationToken)
         {
             await context.SaveChangesAsync(cancellationToken);
-            if (_transaction != null)
-            {
-                await _transaction.CommitAsync(cancellationToken);
-                await _transaction.DisposeAsync();
-                _transaction = null;
-            }
         }
 
         public void Dispose()
