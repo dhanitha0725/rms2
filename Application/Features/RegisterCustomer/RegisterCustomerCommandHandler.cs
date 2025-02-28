@@ -20,20 +20,24 @@ namespace Application.Features.RegisterCustomer
             RegisterCustomerCommand request,
             CancellationToken cancellationToken)
         {
-            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            //using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
 
-            //check user entity user exists
-            var userExists = await userRepository.ExistsAsync(u =>
-                u.Email == request.RegisterCustomerDto.Email, cancellationToken);
+            await unitOfWork.BeginTransactionAsync(cancellationToken);
 
-            if (userExists)
+            try
             {
-                logger.Warning($"User with email {request.RegisterCustomerDto.Email} already exists.");
-                return Result<string>.Failure(new Error("User already exists."));
-            }
+                //check user entity user exists
+                var userExists = await userRepository.ExistsAsync(u =>
+                    u.Email == request.RegisterCustomerDto.Email, cancellationToken);
 
-            // Create identity user
-            var identityResult = await authService.CreateUserAsync(
+                if (userExists)
+                {
+                    logger.Warning($"User with email {request.RegisterCustomerDto.Email} already exists.");
+                    return Result<string>.Failure(new Error("User already exists."));
+                }
+
+                // Create identity user
+                var identityResult = await authService.CreateUserAsync(
                     request.RegisterCustomerDto.Email,
                     request.RegisterCustomerDto.Password,
                     request.RegisterCustomerDto.ConfirmPassword);
@@ -42,19 +46,29 @@ namespace Application.Features.RegisterCustomer
                     logger.Error("Failed to create identity user");
                 }
 
-            // Create user entity using AutoMapper
-            var user = mapper.Map<User>(request.RegisterCustomerDto);
-        
-            // Save the user entity to the repository
-            await userRepository.AddAsync(user, cancellationToken);
+                // Create user entity using AutoMapper
+                var user = mapper.Map<User>(request.RegisterCustomerDto);
 
-            // Commit the changes
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+                // Save the user entity to the repository
+                await userRepository.AddAsync(user, cancellationToken);
 
-            transaction.Complete();
+                // Commit the changes
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+                await unitOfWork.CommitTransactionAsync(cancellationToken);
 
-            logger.Information($"User {user.UserId} registered successfully");
-            return (Result<string>)identityResult;
+                //transaction.Complete();
+
+                logger.Information($"User {user.UserId} registered successfully");
+                return (Result<string>)identityResult;
+            }
+            catch (Exception e)
+            {
+                await unitOfWork.RollbackTransactionAsync(cancellationToken);
+                logger.Error(e, "Error registering user");
+                throw;
+            }
+
+
         }
     }
 }

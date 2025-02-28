@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Application.DTOs.FacilityDtos;
+﻿using Application.DTOs.FacilityDtos;
 using AutoMapper;
 using Domain.Entities;
 
@@ -16,8 +15,12 @@ namespace Application.Profiles
 
             CreateMap<AddFacilityTypeDto, FacilityType>();
 
-            // Map FacilityType to FacilityTypeDto for automatic projection.
             CreateMap<FacilityType, GetFacilityTypeDto>();
+
+            CreateMap<RoomConfigurationDto, Room>()
+                .ForMember(dest => dest.RoomID, opt => opt.Ignore())
+                .ForMember(dest => dest.FacilityID, opt => opt.Ignore())
+                .ForMember(dest => dest.RoomNumber, opt => opt.Ignore());
         }
     }
 }

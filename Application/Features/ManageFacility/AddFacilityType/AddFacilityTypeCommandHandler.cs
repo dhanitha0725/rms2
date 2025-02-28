@@ -27,6 +27,7 @@ namespace Application.Features.ManageFacility.AddFacilityType
 
                 await facilityTypeRepository.AddAsync(newFacilityType, cancellationToken);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
+                await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 logger.Information("New Facility Type Added with Id: {FacilityTypeId}", newFacilityType.FacilityTypeId);
 

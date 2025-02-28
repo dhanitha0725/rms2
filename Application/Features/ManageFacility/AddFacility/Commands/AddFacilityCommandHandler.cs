@@ -50,35 +50,7 @@ namespace Application.Features.ManageFacility.AddFacility.Commands
 
                 await facilityRepository.AddAsync(facility, cancellationToken);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
-
-                // Handle image upload only if images exist
-                //if (request.FacilityDto.Images != null && request.FacilityDto.Images?.Count > 0)
-                //{
-                //    try
-                //    {
-                //        var imageUrls = await googleDriveService.UploadImagesAsync(request.FacilityDto.Images);
-
-                //        // Create and save image entities
-                //        var images = imageUrls.Select(url => new Image
-                //        {
-                //            FacilityID = facility.FacilityID,
-                //            ImageUrl = url
-                //        }).ToList();
-
-                //        foreach (var image in images)
-                //        {
-                //            await imageRepository.AddAsync(image, cancellationToken);
-                //        }
-
-                //        await unitOfWork.SaveChangesAsync(cancellationToken);
-                //    }
-                //    catch (Exception ex)
-                //    {
-                //        logger.Error(ex, "Error uploading images for facility {FacilityId}", facility.FacilityID);
-                //        await unitOfWork.RollbackTransactionAsync(cancellationToken);
-                //        throw;
-                //    }
-                //}
+                await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 logger.Information("New Facility Added with Id: {FacilityId}", facility.FacilityID);
                 return Result<int>.Success(facility.FacilityID);

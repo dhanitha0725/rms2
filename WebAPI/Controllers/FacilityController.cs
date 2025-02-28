@@ -42,6 +42,7 @@ namespace WebAPI.Controllers
             {
                 return BadRequest(new { Error = result.Error.Message });
             }
+
             return Ok(new { FacilityTypeId = result.Value });
         }
 
@@ -56,13 +57,15 @@ namespace WebAPI.Controllers
             {
                 return BadRequest(new { Error = result.Error.Message });
             }
+
             return Ok(new { ImageUrls = result.Value });
         }
 
 
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateFacility([FromRoute]int id, [FromBody] UpdateFacilityDto updateFacilityDto, string facilityId)
+        public async Task<IActionResult> UpdateFacility([FromRoute] int id,
+            [FromBody] UpdateFacilityDto updateFacilityDto, string facilityId)
         {
             var command = new UpdateFacilityCommand
             {
@@ -73,6 +76,7 @@ namespace WebAPI.Controllers
             {
                 return BadRequest(new { Error = result.Error.Message });
             }
+
             return Ok(new { FacilityId = result.Value });
         }
 
@@ -86,6 +90,7 @@ namespace WebAPI.Controllers
             {
                 return BadRequest(new { Error = result.Error.Message });
             }
+
             return Ok(result.Value);
         }
     }
