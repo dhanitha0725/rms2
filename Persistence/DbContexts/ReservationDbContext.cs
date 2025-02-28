@@ -17,7 +17,6 @@ namespace Persistence.DbContexts
         public DbSet<Room> Rooms { get; set; }
         public DbSet<Package> Packages { get; set; }
         public DbSet<Facility> Facilities { get; set; }
-        public DbSet<FacilityPackage> FacilityPackages { get; set; }
         public DbSet<Document> Documents { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Invoice> Invoices { get; set; }

@@ -48,6 +48,11 @@ namespace Persistence.Configurations
                 .WithMany(ft => ft.Facilities)
                 .HasForeignKey(f => f.FacilityTypeId);
 
+            builder.HasMany(f => f.Packages)
+                .WithOne(p => p.Facility)
+                .HasForeignKey(p => p.FacilityID)
+                .OnDelete(DeleteBehavior.Cascade);
+
         }
     }
 }

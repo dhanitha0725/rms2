@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <Folder Include="Features\ManageFacility\GetFacilityNames\" />
+    <Folder Include="Features\ManagePackages\" />
   </ItemGroup>
 
 </Project>
