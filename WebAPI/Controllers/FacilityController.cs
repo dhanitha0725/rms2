@@ -1,6 +1,7 @@
 ﻿using Application.DTOs.FacilityDtos;
 using Application.Features.ManageFacility.AddFacility.Commands;
 using Application.Features.ManageFacility.AddFacilityType;
+using Application.Features.ManageFacility.GetFacilityDetails;
 using Application.Features.ManageFacility.GetFacilityNames;
 using Application.Features.ManageFacility.GetFacilityTypes;
 using Application.Features.ManageFacility.UpdateFacility;
@@ -19,7 +20,6 @@ namespace WebAPI.Controllers
         // [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFacility([FromBody] AddFacilityDto addFacilityDto)
         {
-            // Create command with DTO and images
             var command = new AddFacilityCommand(addFacilityDto);
             var result = await mediator.Send(command);
 
@@ -99,6 +99,14 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetFacilitySelectList()
         {
             var query = new GetFacilityNamesQuery();
+            var result = await mediator.Send(query);
+            return Ok(result);
+        }
+
+        [HttpGet("admin")]
+        public async Task<IActionResult> GetFacilityDetails()
+        {
+            var query = new GetFacilityDetailsQuery();
             var result = await mediator.Send(query);
             return Ok(result);
         }

@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Application.Features.ManageFacility.GetFacilityNames
 {
-    public record GetFacilityNamesQuery : IRequest<Result<List<FacilityNamesSelectDto>>>
+    public record GetFacilityNamesQuery : IRequest<List<FacilityNamesSelectDto>>
     {
     }
 }
