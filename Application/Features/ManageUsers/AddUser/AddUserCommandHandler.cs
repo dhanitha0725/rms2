@@ -6,7 +6,7 @@ using Serilog;
 using Domain.Entities;
 using System.Transactions;
 
-namespace Application.Features.AddUser
+namespace Application.Features.ManageUsers.AddUser
 {
     public class AddUserCommandHandler(
         IUnitOfWork unitOfWork,

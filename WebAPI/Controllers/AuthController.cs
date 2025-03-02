@@ -1,6 +1,7 @@
 ﻿using Application.DTOs.UserDtos;
-using Application.Features.AddUser;
 using Application.Features.LogCustomer;
+using Application.Features.ManageUsers.AddUser;
+using Application.Features.ManageUsers.GetUserDetails;
 using Application.Features.RegisterCustomer;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -58,6 +59,14 @@ namespace WebAPI.Controllers
                 return BadRequest(result);
             }
             //return Ok(new { Token = result.Value });
+            return Ok(result);
+        }
+
+        [HttpGet("get-user-details")]
+        public async Task<IActionResult> GetUserDetails()
+        {
+            var query = new GetUserDetailsQuery();
+            var result = await mediator.Send(query);
             return Ok(result);
         }
     }
