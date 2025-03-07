@@ -6,7 +6,7 @@ using Domain.Entities;
 using MediatR;
 using Serilog;
 
-namespace Application.Features.RegisterCustomer
+namespace Application.Features.AuthenticateUser.RegisterCustomer
 {
     public class RegisterCustomerCommandHandler (
         IAuthService authService,

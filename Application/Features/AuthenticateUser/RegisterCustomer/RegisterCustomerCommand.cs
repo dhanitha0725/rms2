@@ -2,7 +2,7 @@
 using Domain.Common;
 using MediatR;
 
-namespace Application.Features.RegisterCustomer
+namespace Application.Features.AuthenticateUser.RegisterCustomer
 {
     public class RegisterCustomerCommand : IRequest<Result<string>>
     {

@@ -2,9 +2,9 @@
 using Domain.Common;
 using MediatR;
 
-namespace Application.Features.LogCustomer
+namespace Application.Features.AuthenticateUser.LogAdmin
 {
-    public class LoginCommand : IRequest<Result<string>>
+    public class AdminLoginCommand : IRequest<Result<string>>
     {
         public LoginDto LoginDto { get; set; }
     }
