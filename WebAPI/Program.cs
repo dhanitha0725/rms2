@@ -4,7 +4,6 @@ using Serilog.Events;
 using Application;
 using WebAPI.Middlewares;
 using Identity;
-using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 

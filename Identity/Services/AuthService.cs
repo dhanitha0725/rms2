@@ -2,7 +2,6 @@
 using Application.DTOs.UserDtos;
 using Domain.Common;
 using Identity.Models;
-//using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Identity;
 
 namespace Identity.Services

@@ -1,23 +1,23 @@
-﻿using MediatR;
+﻿using System.Transactions;
 using Application.Abstractions.Interfaces;
 using AutoMapper;
 using Domain.Common;
-using Serilog;
 using Domain.Entities;
-using System.Transactions;
+using MediatR;
+using Serilog;
 
-namespace Application.Features.AddUser
+namespace Application.Features.AuthenticateUser.RegisterCustomer
 {
-    public class AddUserCommandHandler(
-        IUnitOfWork unitOfWork,
-        IMapper mapper,
+    public class RegisterCustomerCommandHandler (
+        IAuthService authService,
         ILogger logger,
         IGenericRepository<User, int> userRepository,
-        IAuthService authService) : IRequestHandler<AddUserCommand, Result<string>>
+        IMapper mapper,
+        IUnitOfWork unitOfWork) :
+        IRequestHandler<RegisterCustomerCommand, Result<string>>
     {
-        
         public async Task<Result<string>> Handle(
-            AddUserCommand request, 
+            RegisterCustomerCommand request,
             CancellationToken cancellationToken)
         {
             //using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
@@ -26,43 +26,49 @@ namespace Application.Features.AddUser
 
             try
             {
+                //check user entity user exists
                 var userExists = await userRepository.ExistsAsync(u =>
-                    u.Email == request.AddUserDto.Email, cancellationToken);
+                    u.Email == request.RegisterCustomerDto.Email, cancellationToken);
 
                 if (userExists)
                 {
-                    logger.Warning($"User with email {request.AddUserDto.Email} already exists.");
+                    logger.Warning($"User with email {request.RegisterCustomerDto.Email} already exists.");
                     return Result<string>.Failure(new Error("User already exists."));
                 }
 
-                var identityResult = await authService.AddUserAsync(
-                    request.AddUserDto.Email,
-                    request.AddUserDto.Password,
-                    request.AddUserDto.Role);
-
-                if (identityResult.IsSuccess)
+                // Create identity user
+                var identityResult = await authService.CreateUserAsync(
+                    request.RegisterCustomerDto.Email,
+                    request.RegisterCustomerDto.Password,
+                    request.RegisterCustomerDto.ConfirmPassword);
+                if (!identityResult.IsSuccess)
                 {
                     logger.Error("Failed to create identity user");
                 }
 
                 // Create user entity using AutoMapper
-                var user = mapper.Map<User>(request.AddUserDto);
+                var user = mapper.Map<User>(request.RegisterCustomerDto);
 
+                // Save the user entity to the repository
                 await userRepository.AddAsync(user, cancellationToken);
+
+                // Commit the changes
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 //transaction.Complete();
 
-                logger.Information($"User {user.UserId} added successfully");
-                return Result<string>.Success("User added successfully");
+                logger.Information($"User {user.UserId} registered successfully");
+                return (Result<string>)identityResult;
             }
             catch (Exception e)
             {
                 await unitOfWork.RollbackTransactionAsync(cancellationToken);
-                logger.Error(e, "Error adding user");
+                logger.Error(e, "Error registering user");
                 throw;
             }
+
+
         }
     }
 }

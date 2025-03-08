@@ -1,11 +1,6 @@
 ﻿using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Persistence.Configurations
 {
@@ -30,8 +25,11 @@ namespace Persistence.Configurations
             builder.Property(p => p.Duration)
                  .HasColumnName("Duration")
                  .HasColumnType("interval");
-            
-       
+
+            builder.HasOne(p => p.Facility)
+                .WithMany(f => f.Packages)
+                .HasForeignKey(p => p.FacilityID)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

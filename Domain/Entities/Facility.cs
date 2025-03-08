@@ -12,7 +12,7 @@
         public string? Status { get; set; }
         public DateTime CreatedDate { get; set; }
 
-        public ICollection<FacilityPackage> FacilityPackages { get; set; }
+        public ICollection<Package> Packages{ get; set; }
         public ICollection<Room>? Rooms { get; set; }
         public ICollection<Image> Images { get; set; }
     }
