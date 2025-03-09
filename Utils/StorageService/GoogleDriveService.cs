@@ -5,7 +5,7 @@ using Google.Apis.Services;
 using Microsoft.AspNetCore.Http;
 using Serilog;
 
-namespace Utils.StorageService
+namespace Utilities.StorageService
 {
     public class GoogleDriveService(ILogger logger) : IGoogleDriveService
     {
