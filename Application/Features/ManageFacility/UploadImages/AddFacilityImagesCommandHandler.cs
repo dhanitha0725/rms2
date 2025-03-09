@@ -32,7 +32,7 @@ namespace Application.Features.ManageFacility.UploadImages
                 }
 
                 //upload images
-                var imageUrls = await driveService.UploadImagesAsync(
+                var imageUrls = await driveService.UploadFilesAsync(
                     request.AddFacilityImagesDto.Images);
 
                 //save to db
