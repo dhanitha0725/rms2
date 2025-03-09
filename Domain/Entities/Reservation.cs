@@ -10,7 +10,7 @@
         public decimal Total { get; set; }
         public string Status { get; set; }
         public int UserID { get; set; }
-        public int? PackageID { get; set; }
+        public string UserType { get; set; }
         public string CreatedBy { get; set; }
         public string UpdatedBy { get; set; }
 
