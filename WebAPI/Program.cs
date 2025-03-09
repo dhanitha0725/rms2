@@ -4,6 +4,7 @@ using Serilog.Events;
 using Application;
 using WebAPI.Middlewares;
 using Identity;
+using Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,7 +36,8 @@ try
     builder.Services
         .AddApplication()
         .AddInfrastructure(builder.Configuration)
-        .AddIdentity(builder.Configuration);
+        .AddIdentity(builder.Configuration)
+        .AddUtilities(builder.Configuration);
 
     // Configure CORS
     builder.Services.AddCors(options =>

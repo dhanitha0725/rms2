@@ -1,11 +1,11 @@
-﻿using Google.Apis.Auth.OAuth2;
+﻿using Application.Abstractions.Interfaces;
+using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
 using Google.Apis.Services;
 using Microsoft.AspNetCore.Http;
-using Application.Abstractions.Interfaces;
 using Serilog;
 
-namespace Persistence.Repositories
+namespace Utils.StorageService
 {
     public class GoogleDriveService(ILogger logger) : IGoogleDriveService
     {
