@@ -1,5 +1,4 @@
-﻿using System.Text.RegularExpressions;
-using Application.Abstractions.Interfaces;
+﻿using Application.Abstractions.Interfaces;
 using Application.DTOs.FacilityDtos;
 using Domain.Common;
 using Domain.Entities;
@@ -9,11 +8,11 @@ using Serilog;
 namespace Application.Features.ManageFacility.AddRooms
 {
     public class AddRoomsCommandHandler(
-            IGenericRepository<Facility, int> facilityRepository,
-            IGenericRepository<Room, int> roomRepository,
-            IUnitOfWork unitOfWork,
-            ILogger logger)
-            : IRequestHandler<AddRoomsCommand, Result<RoomConfigurationDto>>
+                IGenericRepository<Facility, int> facilityRepository,
+                IGenericRepository<Room, int> roomRepository,
+                IUnitOfWork unitOfWork,
+                ILogger logger)
+                : IRequestHandler<AddRoomsCommand, Result<RoomConfigurationDto>>
     {
         public async Task<Result<RoomConfigurationDto>> Handle(
             AddRoomsCommand request,
@@ -29,20 +28,12 @@ namespace Application.Features.ManageFacility.AddRooms
                     return Result<RoomConfigurationDto>.Failure(new Error("Facility not found"));
                 }
 
-                var existingRooms = await roomRepository.GetAllAsync(cancellationToken);
-                existingRooms = existingRooms.Where(r => r.FacilityID == request.FacilityId);
-
-                var prefix = GetRoomPrefix(facility.FacilityName);
-                var maxNumber = GetMaxRoomNumber(existingRooms);
-                var roomNumbers = GenerateRoomNumbers(prefix, maxNumber, request.RoomConfigurationDto.Quantity);
-
                 // Create rooms
-                var rooms = roomNumbers.Select(rn => new Room
+                var rooms = Enumerable.Range(1, request.RoomConfigurationDto.Quantity).Select(_ => new Room
                 {
                     FacilityID = request.FacilityId,
                     Type = request.RoomConfigurationDto.RoomType,
                     Capacity = request.RoomConfigurationDto.Capacity,
-                    RoomNumber = rn,
                     NumberOfBeds = request.RoomConfigurationDto.NumberOfBeds,
                     Status = request.RoomConfigurationDto.Status
                 }).ToList();
@@ -60,31 +51,6 @@ namespace Application.Features.ManageFacility.AddRooms
                 await unitOfWork.RollbackTransactionAsync(cancellationToken);
                 logger.Error(e, "Error adding rooms");
                 throw;
-            }
-        }
-
-        private static char GetRoomPrefix(string facilityName)
-        {
-            var firstLetter = facilityName?.Trim().FirstOrDefault(char.IsLetter);
-            return firstLetter.HasValue ? char.ToUpper(firstLetter.Value) : 'R';
-        }
-
-        private static int GetMaxRoomNumber(IEnumerable<Room> existingRooms)
-        {
-            return existingRooms
-                .Select(r => int.TryParse(Regex.Match(r.RoomNumber, @"\d+").Value, out var num) ? num : 0)
-                .DefaultIfEmpty(0)
-                .Max();
-        }
-
-        private static IEnumerable<string> GenerateRoomNumbers(
-            char prefix,
-            int startNumber,
-            int quantity)
-        {
-            for (int i = 1; i <= quantity; i++)
-            {
-                yield return $"{prefix}{(startNumber + i):D3}";
             }
         }
     }

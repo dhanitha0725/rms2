@@ -17,12 +17,6 @@ namespace Persistence.Configurations
                 .HasColumnName("RoomID")
                 .ValueGeneratedOnAdd();
 
-            builder.Property(e => e.RoomNumber)
-                .HasColumnType("varchar(10)")
-                .HasColumnName("RoomNumber")
-                .HasMaxLength(10)
-                .IsRequired();
-
             builder.Property(e => e.Type)
                 .HasColumnType("varchar(50)")
                 .HasColumnName("Type")
