@@ -19,9 +19,4 @@
     <ProjectReference Include="..\Domain\Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="DTOs\ReservationDtos\" />
-    <Folder Include="Features\ManageReservations\AddReservationByCustomer\" />
-  </ItemGroup>
-
 </Project>

@@ -12,6 +12,5 @@
         public ICollection<Payment> Payments { get; set; }
         public ICollection<Reservation> Reservations { get; set; }
         public ICollection<Document>? Documents { get; set; }
-
     }
 }

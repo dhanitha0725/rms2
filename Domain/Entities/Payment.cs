@@ -9,7 +9,6 @@
         public string Status { get; set; }
         public int ReservationID { get; set; }
         public int UserID { get; set; }
-        public int InvoiceID { get; set; }
 
         public Reservation Reservation { get; set; }
         public User User { get; set; }
