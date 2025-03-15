@@ -82,6 +82,11 @@ namespace Persistence.Configurations
                 .HasForeignKey(rr => rr.ReservationID)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // one-to-one relationship with ReservationUserDetail
+            builder.HasOne(r => r.ReservationUserDetail)
+                .WithOne(rud => rud.Reservation)
+                .HasForeignKey<ReservationUserDetail>(rud => rud.ReservationID)
+                .OnDelete(DeleteBehavior.Cascade);
 
         }
     }

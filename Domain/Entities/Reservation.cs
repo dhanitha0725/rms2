@@ -20,5 +20,6 @@
         public ICollection<ReservedRoom>? ReservedRooms { get; set; }
         public ICollection<Invoice>? Invoices { get; set; }
         public ICollection<Document>? Documents { get; set; }
+        public ReservationUserDetail ReservationUserDetail { get; set; }
     }
 }
