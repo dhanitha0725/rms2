@@ -93,7 +93,8 @@ namespace Application.Features.ManageReservations.AddReservationByCustomer.Proce
             await paymentRepository.AddAsync(payment, cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
-            decimal totalPaid = reservationPayments.Sum(p => p.AmountPaid);
+            // Calculate total paid amount
+            decimal totalPaid = reservationPayments.Sum(p => p.AmountPaid ?? 0); 
 
             // Update reservation status based on total paid amount
             if (totalPaid >= reservation.Total)
@@ -120,8 +121,8 @@ namespace Application.Features.ManageReservations.AddReservationByCustomer.Proce
                 var user = await userRepository.GetByIdAsync(request.UserId, cancellationToken);
                 if (user != null)
                 {
-                    string emailSubject = "Reservation Confirmation";
-                    string emailBody = $@"
+                    var emailSubject = "Reservation Confirmation";
+                    var emailBody = $@"
                             <html>
                             <body>
                                 <h2>Reservation Confirmation</h2>

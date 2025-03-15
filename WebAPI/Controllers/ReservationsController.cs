@@ -7,16 +7,16 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ReservationsController(
-        IMediator mediator,
-        ILogger<ReservationsController> logger) : ControllerBase
+    public class ReservationsController(IMediator mediator) : ControllerBase
     {
         [HttpPost]
-        public async Task<IActionResult> CreateReservation([FromBody] MakeReservationDto dto)
+        public async Task<IActionResult> CreateReservation([FromForm] MakeReservationDto dto)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)));
+                return BadRequest(ModelState.Values
+                    .SelectMany(v => v.Errors
+                        .Select(e => e.ErrorMessage)));
             }
 
             var userId = int.Parse(User.FindFirst("nameid")?.Value ?? "0");

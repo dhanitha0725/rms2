@@ -2,9 +2,9 @@
 
 namespace Application.Features.ManageReservations.AddReservationByCustomer.CreateGuestUser
 {
-    public class CreateGuestUserCommanValidator : AbstractValidator<CreateGuestUserCommand>
+    public class CreateGuestUserCommandValidator : AbstractValidator<CreateGuestUserCommand>
     {
-        public CreateGuestUserCommanValidator()
+        public CreateGuestUserCommandValidator()
         {
             RuleFor(x => x.GuestFirstName)
                 .NotEmpty().WithMessage("First Name is required")

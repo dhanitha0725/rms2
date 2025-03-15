@@ -7,7 +7,7 @@ namespace Application.Features.ManageReservations.AddReservationByCustomer.Check
     public class CheckAvailabilityQuery : IRequest<Result<bool>>
     {
         public int FacilityID { get; set; }
-        public List<SelectedPackageDto> Packages { get; set; }
+        public List<SelectedPackageDto>? Packages { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
     }
