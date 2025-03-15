@@ -26,9 +26,19 @@ public class MakeReservationCommandHandler(
         try
         {
             var dto = request.ReservationDto;
+            if (string.IsNullOrEmpty(dto.PackagesJson))
+            {
+                return Result<MakeReservationDto>.Failure(new Error("Package data is required."));
+            }
 
-            // Determine if the user is an employee or customer
-            int userId;
+            var packages = dto.Packages ?? new();
+            if (!packages.Any())
+            {
+                return Result<MakeReservationDto>.Failure(new Error("Invalid package format."));
+            }
+
+                // Determine if the user is an employee or customer
+                int userId;
             if (request.AuthenticatedUserRole == "Employee" && dto is { GuestEmail: not null, GuestPhone: not null })
             {
                 var guestResult = await mediator.Send(new CreateGuestUserCommand

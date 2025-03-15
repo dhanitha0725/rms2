@@ -1,4 +1,6 @@
-﻿using FluentValidation;
+﻿using System.Text.Json;
+using Application.DTOs.ReservationDtos;
+using FluentValidation;
 using Microsoft.AspNetCore.Http;
 
 namespace Application.Features.ManageReservations.AddReservationByCustomer.CompleteReservation;
@@ -30,8 +32,8 @@ public class MakeReservationCommandValidator : AbstractValidator<MakeReservation
             RuleFor(x => x.ReservationDto.StartDate)
                 .NotEmpty()
                 .WithMessage("Start date is required")
-                .Must(ValidDate)
-                .WithMessage("Start date is not valid");
+                .Must(date => date > DateTime.UtcNow.AddHours(-1))
+                .WithMessage("Start date must be in future");
 
             RuleFor(x => x.ReservationDto.EndDate)
                 .NotEmpty()
@@ -57,6 +59,10 @@ public class MakeReservationCommandValidator : AbstractValidator<MakeReservation
                         .GreaterThan(0)
                         .WithMessage("Package quantity must be greater than 0");
                 });
+
+            RuleFor(x => x.ReservationDto.PackagesJson)
+                .NotEmpty().WithMessage("Package data is required")
+                .Must(ValidPackageJson).WithMessage("Invalid package format");
 
             // validate payment details
             RuleFor(x => x.ReservationDto.PaymentMethod)
@@ -134,16 +140,29 @@ public class MakeReservationCommandValidator : AbstractValidator<MakeReservation
 
     private static bool ValidFileSize(IFormFile? file)
     {
-        return file is { Length: <= MaxFileSize };
+        return file?.Length <= MaxFileSize;
     }
 
     private static bool ValidFileType(IFormFile? file)
     {
-        if (file == null)
-            return false;
+        if (file == null) return false;
 
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
 
         return AllowedFileTypes.Contains(extension);
+    }
+
+    private static bool ValidPackageJson(string json)
+    {
+        try
+        {
+            var packages = JsonSerializer.Deserialize<List<SelectedPackageDto>>(json);
+
+            return packages?.Any() == true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

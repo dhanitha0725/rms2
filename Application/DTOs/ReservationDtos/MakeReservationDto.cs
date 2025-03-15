@@ -22,6 +22,8 @@ namespace Application.DTOs.ReservationDtos
 
         [JsonIgnore]
         public List<SelectedPackageDto>? Packages =>
-            JsonSerializer.Deserialize<List<SelectedPackageDto>>(PackagesJson);
+            string.IsNullOrEmpty(PackagesJson)
+                ? new List<SelectedPackageDto>()
+                : JsonSerializer.Deserialize<List<SelectedPackageDto>>(PackagesJson);
     }
 }
