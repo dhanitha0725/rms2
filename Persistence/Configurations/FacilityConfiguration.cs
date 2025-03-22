@@ -44,15 +44,22 @@ namespace Persistence.Configurations
                 .HasColumnName("Description")
                 .HasColumnType("varchar(500)");
 
+            // one-to-many relationship between Facility and FacilityType
             builder.HasOne(f => f.FacilityType)
                 .WithMany(ft => ft.Facilities)
                 .HasForeignKey(f => f.FacilityTypeId);
 
+            // one-to-many relationship between Facility and Room
             builder.HasMany(f => f.Packages)
                 .WithOne(p => p.Facility)
                 .HasForeignKey(p => p.FacilityID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // one-to-many relationship between Facility and RoomPricing
+            builder.HasMany(f => f.RoomPricings)
+                .WithOne(rp => rp.Facility)
+                .HasForeignKey(rp => rp.FacilityID)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

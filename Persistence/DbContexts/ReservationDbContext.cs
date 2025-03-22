@@ -22,6 +22,9 @@ namespace Persistence.DbContexts
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<InvoicePayment> InvoicePayments { get; set; } 
         public DbSet<User> Users { get; set; }
+        public DbSet<FacilityType> FacilityTypes { get; set; }
+        public DbSet<RoomPricing> RoomPricings { get; set; }
+        public DbSet<Image> Images { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -2,9 +2,8 @@
 using Domain.Common;
 using MediatR;
 
-namespace Application.Features.ManageFacility.AddFacility.Commands
+namespace Application.Features.ManageFacility.AddFacility.Commands;
+
+public record AddFacilityCommand (AddFacilityDto FacilityDto) : IRequest<Result<int>>
 {
-    public record AddFacilityCommand (AddFacilityDto FacilityDto) : IRequest<Result<int>>
-    {
-    }
 }
