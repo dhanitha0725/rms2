@@ -44,7 +44,7 @@ namespace Application.Features.ManageFacility.AddRooms
                 await roomRepository.AddRangeAsync(rooms, cancellationToken);
 
                 // add or update pricing for the room type
-                foreach (var pricing in request.RoomConfigurationDto.Pricings)
+                foreach (var pricing in request.RoomConfigurationDto.Pricing)
                 {
                     var sector = pricing.Key;
                     var price = pricing.Value;
