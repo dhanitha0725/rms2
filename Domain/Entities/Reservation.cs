@@ -1,4 +1,6 @@
-﻿namespace Domain.Entities
+﻿using Domain.Enums;
+
+namespace Domain.Entities
 {
     public class Reservation
     {
@@ -8,7 +10,7 @@
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
         public decimal Total { get; set; }
-        public string Status { get; set; }
+        public ReservationStatus Status { get; set; }
         public int UserID { get; set; }
         public string UserType { get; set; }
         public string CreatedBy { get; set; }

@@ -1,13 +1,29 @@
 ﻿using Application.Abstractions.Interfaces;
-using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Persistence.DbContexts;
 
 namespace Persistence.Repositories
 {
-    public class ReservationRepository : IReservationRepository
+    public class ReservationRepository(ReservationDbContext context) : IReservationRepository
     {
-        public Task<Reservation> AddAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<int> GetReservedRoomsCountAsync(
+            int facilityId, 
+            string roomType, 
+            DateTime startDate, 
+            DateTime endDate)
         {
-            throw new NotImplementedException();
+            return await context.ReservedRooms
+                .Where(r => r.Room.FacilityID == facilityId &&
+                            r.Room.Type == roomType &&
+                            r.StartDate < endDate &&
+                            r.EndDate > startDate)
+                .CountAsync();
+        }
+
+        public async Task<bool> IsPackageReservedAsync(int packageId)
+        {
+            return await context.ReservedPackages
+                .AnyAsync(r => r.PackageID == packageId);
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Application.DTOs.FacilityDtos;
 using Application.Features.ManageFacility.AddFacility.Commands;
 using Application.Features.ManageFacility.AddFacilityType;
+using Application.Features.ManageFacility.FacilityCardDetails;
 using Application.Features.ManageFacility.GetFacilityDetails;
 using Application.Features.ManageFacility.GetFacilityNames;
 using Application.Features.ManageFacility.GetFacilityTypes;
@@ -107,6 +108,14 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetFacilityDetails()
         {
             var query = new GetFacilityDetailsQuery();
+            var result = await mediator.Send(query);
+            return Ok(result);
+        }
+
+        [HttpGet("facility-cards")]
+        public async Task<IActionResult> GetFacilityCards()
+        {
+            var query = new GetFacilityCardsQuery();
             var result = await mediator.Send(query);
             return Ok(result);
         }
