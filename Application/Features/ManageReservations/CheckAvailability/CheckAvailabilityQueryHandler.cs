@@ -8,99 +8,88 @@ using Serilog;
 namespace Application.Features.ManageReservations.CheckAvailability
 {
     public class CheckAvailabilityQueryHandler(
-        IGenericRepository<Facility, int> facilityRepository,
+        IGenericRepository<ReservedRoom, int> reservedRoomRepository,
+        IGenericRepository<ReservedPackage, int> reservedPackageRepository,
+        IGenericRepository<Room, int> roomRepository,
         IGenericRepository<Package, int> packageRepository,
-        IRoomRepository roomRepository,
-        IReservationRepository reservationRepository,
         ILogger logger)
-        : IRequestHandler<CheckAvailabilityQuery, Result<AvailabilityResultDto>>
+        : IRequestHandler<CheckAvailabilityQuery, Result<AvailabilityResponseDto>>
     {
-        public async Task<Result<AvailabilityResultDto>> Handle(
+        public async Task<Result<AvailabilityResponseDto>> Handle(
             CheckAvailabilityQuery request,
             CancellationToken cancellationToken)
         {
-            var result = new AvailabilityResultDto();
+            var isAvailable = true;
+            var requestDateRange = request.CheckAvailabilityDto;
 
-            // check facility availability
-            var facility = await facilityRepository.GetByIdAsync(request.FacilityId, cancellationToken);
-            //if (facility == null)
-            //{
-            //    result.IsAvailable = false;
-            //    return Result<AvailabilityResultDto>.Failure(new Error("Facility not found"));
-            //}
-
-            // check room availability
-            if (request.Rooms.Any())
+            foreach (var item in requestDateRange.Items)
             {
-                if (!facility.HasRooms)
+                if (item.Type == "package")
                 {
-                    result.IsAvailable = false;
-                    return Result<AvailabilityResultDto>.Failure(new Error("Facility does not have rooms"));
+                    var result = await CheckPackageAvailability(item, requestDateRange);
+                    if (!result) isAvailable = false;
+                }
+                else if (item.Type == "room")
+                {
+                    var result = await CheckRoomAvailability(item, requestDateRange);
+                    if (!result) isAvailable = false;
                 }
             }
 
-            foreach (var roomRequest in request.Rooms)
+            var message = isAvailable
+                ? "The facility is available."
+                : "The facility is not available.";
+
+            return Result<AvailabilityResponseDto>.Success(new AvailabilityResponseDto
             {
-                var totalRooms = await roomRepository.GetRoomCountByTypeAsync(
-                    request.FacilityId,
-                    roomRequest.RoomType);
-
-                if (totalRooms == 0)
-                {
-                    result.IsAvailable = false;
-                    return Result<AvailabilityResultDto>.Failure(
-                        new Error($"Room type {roomRequest.RoomType} not found"));
-                }
-
-                var reservedRooms = await reservationRepository.GetReservedRoomsCountAsync(
-                    request.FacilityId,
-                    roomRequest.RoomType,
-                    DateTime.Parse(request.StartDate),
-                    DateTime.Parse(request.EndDate));
-
-                var availableRooms = totalRooms - reservedRooms;
-                if (availableRooms < roomRequest.Quantity)
-                {
-                    result.IsAvailable = false;
-                    return Result<AvailabilityResultDto>.Failure(
-                        new Error($"Not enough {roomRequest.RoomType} rooms available"));
-                }
-            }
-
-            // check package availability
-            if (request.Packages.Any())
-            {
-                //check if facility has packages
-                if (!facility.HasPackages)
-                {
-                    result.IsAvailable = false;
-                    return Result<AvailabilityResultDto>.Failure(new Error("Facility does not have packages"));
-                }
-            }
-
-            // check if package is available
-            foreach (var packageRequest in request.Packages)
-            {
-                var package = await packageRepository.GetByIdAsync(packageRequest.PackageId, cancellationToken);
-                if (package == null || package.FacilityID != request.FacilityId)
-                {
-                    result.IsAvailable = false;
-                    return Result<AvailabilityResultDto>.Failure(new Error("Package not found"));
-                }
-
-                // check if package is reserved
-                var reservedPackages = await reservationRepository.IsPackageReservedAsync(packageRequest.PackageId);
-
-                if (reservedPackages)
-                {
-                    result.IsAvailable = false;
-                    return Result<AvailabilityResultDto>.Failure(new Error("Package is already reserved"));
-                }
-            }
-
-            result.IsAvailable = true;
-            return Result<AvailabilityResultDto>.Success(result);
+                IsAvailable = isAvailable,
+                Message = message
+            });
         }
 
+        private async Task<bool> CheckPackageAvailability(
+            AvailableItemDto item,
+            CheckAvailabilityDto request)
+        {
+            //get package details
+            var package = await packageRepository.GetByIdAsync(item.ItemId);
+            if (package == null)
+            {
+                return false;
+            }
+
+            //check existing reservations
+            var existingReservations = (await reservedPackageRepository.GetAllAsync())
+                .Count(rp => rp.PackageID == item.ItemId &&
+                             rp.Reservation.StartDate < request.EndDate &&
+                             rp.Reservation.EndDate > request.StartDate);
+
+            return existingReservations == 0;
+        }
+
+        private async Task<bool> CheckRoomAvailability(
+            AvailableItemDto item,
+            CheckAvailabilityDto request)
+        {
+            //get room details
+            var room = await roomRepository.GetByIdAsync(item.ItemId);
+            if (room == null)
+            {
+                return false;
+            }
+
+            //get total room of given type
+            var totalRooms = (await roomRepository.GetAllAsync())
+                .Count(r => r.Type == room.Type && r.Status == "Available");
+
+            // get total reserved rooms of given type
+            var reservedRooms = (await reservedRoomRepository.GetAllAsync())
+                .Count(r => r.RoomID == item.ItemId &&
+                            r.Reservation.StartDate < request.EndDate &&
+                            r.Reservation.EndDate > request.StartDate);
+
+            var available = totalRooms - reservedRooms;
+            return available >= item.Quantity;
+        }
     }
 }

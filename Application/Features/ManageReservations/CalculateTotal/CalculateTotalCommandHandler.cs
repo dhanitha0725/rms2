@@ -137,13 +137,33 @@ namespace Application.Features.ManageReservations.CalculateTotal
 
                 if (!pricing.Any()) return Result<PriceBreakdownDto>.Failure(new Error("No pricing available"));
 
+                decimal subTotal;
+                string pricingType;
+
+                // check if package is daily-based (duration >= 24 hours)
+                if (package.Duration is { TotalHours: >= 24 })
+                {
+                    if (!request.StartDate.HasValue || !request.EndDate.HasValue)
+                        return Result<PriceBreakdownDto>.Failure(new Error("Dates are required for daily packages"));
+
+                    var days = (request.EndDate.Value - request.StartDate.Value).Days;
+                    subTotal = pricing.First().Price * days;
+                    pricingType = "daily";
+                }
+                else
+                {
+                    // Fixed duration package
+                    subTotal = pricing.First().Price;
+                    pricingType = "fixed";
+                }
+
                 return Result<PriceBreakdownDto>.Success(new PriceBreakdownDto
                 {
                     ItemName = package.PackageName,
-                    PricingType = "fixed",
+                    PricingType = pricingType,
                     UnitPrice = pricing.First().Price,
                     Quantity = item.Quantity,
-                    SubTotal = pricing.First().Price * item.Quantity,
+                    SubTotal = subTotal * item.Quantity,
                 });
             }
             catch (Exception ex)
@@ -161,7 +181,6 @@ namespace Application.Features.ManageReservations.CalculateTotal
             try
             {
                 var room = await roomRepository.GetByIdAsync(item.ItemId, cancellationToken);
-
                 if (room == null)
                     return Result<PriceBreakdownDto>.Failure(new Error("Room not found"));
 
@@ -172,14 +191,15 @@ namespace Application.Features.ManageReservations.CalculateTotal
                     return Result<PriceBreakdownDto>.Failure(new Error("No pricing available"));
 
                 var duration = (request.EndDate.Value - request.StartDate.Value).Days;
+                var pricePerNight = pricing.First().Price;
 
                 return Result<PriceBreakdownDto>.Success(new PriceBreakdownDto
                 {
                     ItemName = room.Type,
                     PricingType = "daily",
-                    UnitPrice = pricing.First().Price,
+                    UnitPrice = pricePerNight,
                     Quantity = item.Quantity,
-                    SubTotal = pricing.First().Price * item.Quantity * duration,
+                    SubTotal = pricePerNight * item.Quantity * duration,
                 });
             }
             catch (Exception ex)
