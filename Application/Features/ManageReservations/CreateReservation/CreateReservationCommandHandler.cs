@@ -28,8 +28,8 @@ namespace Application.Features.ManageReservations.CreateReservation
                 // Create reservation
                 var reservation = new Reservation
                 {
-                    StartDate = request.StartDate,
-                    EndDate = request.EndDate,
+                    StartDate = request.StartDate.ToLocalTime(),
+                    EndDate = request.EndDate.ToLocalTime(),
                     UserType = request.CustomerType,
                     Total = request.Total,
                     Status = string.Equals(request.CustomerType, "private", StringComparison.OrdinalIgnoreCase)
@@ -86,8 +86,8 @@ namespace Application.Features.ManageReservations.CreateReservation
                         {
                             ReservationID = reservation.ReservationID,
                             RoomID = item.ItemId,
-                            StartDate = request.StartDate,
-                            EndDate = request.EndDate,
+                            StartDate = request.StartDate.ToLocalTime(),
+                            EndDate = request.EndDate.ToLocalTime(),
                         };
 
                         if (!await TryAddAsync(reservedRoomRepository, reservedRoom, cancellationToken))

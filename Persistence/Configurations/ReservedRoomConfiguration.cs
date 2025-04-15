@@ -17,6 +17,16 @@ namespace Persistence.Configurations
                 .HasColumnName("ReservedRoomID")
                 .ValueGeneratedOnAdd();
 
+            builder.Property(rr => rr.StartDate)
+                .HasColumnType("timestamp with time zone")
+                .HasColumnName("StartDate")
+                .IsRequired();
+
+            builder.Property(rr => rr.EndDate)
+                .HasColumnType("timestamp with time zone")
+                .HasColumnName("EndDate")
+                .IsRequired();
+
             // one-to-many relationship between ReservedRoom and Reservation
             builder.HasOne(rr => rr.Reservation)
                 .WithMany(r => r.ReservedRooms)

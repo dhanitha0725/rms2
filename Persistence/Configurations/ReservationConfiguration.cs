@@ -19,22 +19,22 @@ namespace Persistence.Configurations
 
             builder.Property(e => e.StartDate)
                 .HasColumnName("StartDate")
-                .HasColumnType("date")
+                .HasColumnType("timestamp with time zone")
                 .IsRequired();
 
             builder.Property(e => e.EndDate)
                 .HasColumnName("EndDate")
-                .HasColumnType("date")
+                .HasColumnType("timestamp with time zone")
                 .IsRequired();
 
             builder.Property(e => e.CreatedDate)
                 .HasColumnName("CreatedDate")
-                .HasColumnType("timestamp")
+                .HasColumnType("timestamp with time zone")
                 .IsRequired();
 
             builder.Property(e => e.UpdatedDate)
                 .HasColumnName("UpdatedDate")
-                .HasColumnType("timestamp");
+                .HasColumnType("timestamp with time zone");
 
             builder.Property(r => r.Total)
                 .HasColumnName("Total")
