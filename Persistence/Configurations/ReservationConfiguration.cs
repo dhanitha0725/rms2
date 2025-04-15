@@ -58,11 +58,6 @@ namespace Persistence.Configurations
                 .HasColumnName("UpdatedBy")
                 .HasMaxLength(50);
 
-            // one-to-many relationship with User
-            builder.HasOne(r => r.User)
-                .WithMany(u => u.Reservations)
-                .HasForeignKey(r => r.UserID)
-                .OnDelete(DeleteBehavior.Restrict);
 
             // one-to-many relationship with Payment
             builder.HasMany(r => r.Payments)

@@ -28,7 +28,6 @@ namespace Application.Features.ManageReservations.CreateReservation
                 // Create reservation
                 var reservation = new Reservation
                 {
-                    UserID = request.UserId,
                     StartDate = request.StartDate,
                     EndDate = request.EndDate,
                     UserType = request.CustomerType,

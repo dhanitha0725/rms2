@@ -46,7 +46,6 @@ namespace Application.Features.ManageReservations.UploadDocument
                     DocumentType = request.Document.DocumentType,
                     Url = fileUrl.First(),
                     ReservationID = reservation.ReservationID,
-                    UserID = reservation.UserID
                 };
 
                 await documentRepository.AddAsync(document, cancellationToken);

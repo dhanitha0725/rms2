@@ -11,12 +11,10 @@ namespace Domain.Entities
         public DateTime? UpdatedDate { get; set; }
         public decimal Total { get; set; }
         public ReservationStatus Status { get; set; }
-        public int UserID { get; set; }
         public string UserType { get; set; }
         public string CreatedBy { get; set; }
         public string? UpdatedBy { get; set; }
 
-        public User User { get; set; }
         public ICollection<Payment>? Payments { get; set; }
         public ICollection<ReservedPackage> ReservedPackages { get; set; }
         public ICollection<ReservedRoom>? ReservedRooms { get; set; }
