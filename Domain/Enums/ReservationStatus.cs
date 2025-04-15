@@ -2,10 +2,11 @@
 {
     public enum ReservationStatus
     {
-        PendingDocumentUpload,
         PendingApproval,
         PaymentPending,
-        Confirmed,
+        PendingPayment,
+        Approved,
+        Completed,
         Cancelled,
         Expired
     }
