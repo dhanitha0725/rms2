@@ -6,7 +6,7 @@ using MimeKit;
 namespace Utilities.EmailService
 {
     public class SmtpEmailService (
-        string smptServer,
+        string smtpServer,
         int smtPort,
         string senderEmail,
         string senderPassword ,
@@ -27,7 +27,7 @@ namespace Utilities.EmailService
 
             // send email
             using var client = new SmtpClient();
-            await client.ConnectAsync(smptServer, smtPort, secureSocketOptions);
+            await client.ConnectAsync(smtpServer, smtPort, secureSocketOptions);
             await client.AuthenticateAsync(senderEmail, senderPassword);
             await client.SendAsync(message);
             await client.DisconnectAsync(true);

@@ -60,8 +60,9 @@ namespace Application.Features.ManageReservations.CheckAvailability
 
             //check existing reservations
             var existingReservations = (await reservedPackageRepository.GetAllAsync())
-                .Count(rp => rp.PackageID == item.ItemId &&
-                             rp.Reservation.StartDate < request.EndDate &&
+                .Count(rp => rp.PackageID == item.ItemId && 
+                             rp.Reservation != null && 
+                             rp.Reservation.StartDate < request.EndDate && 
                              rp.Reservation.EndDate > request.StartDate);
 
             return existingReservations == 0;

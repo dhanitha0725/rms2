@@ -25,6 +25,9 @@ namespace Utilities
             services.AddSingleton<IEmailService>(provider =>
                 new SmtpEmailService(smtpServer, smtpPort, senderEmail, senderPassword, secureSocketOptions));
 
+            services.AddHostedService<QueuedHostedService>();
+            services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+
             return services;
         }
     }

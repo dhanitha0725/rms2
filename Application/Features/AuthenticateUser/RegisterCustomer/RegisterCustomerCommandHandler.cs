@@ -1,5 +1,4 @@
-﻿using System.Transactions;
-using Application.Abstractions.Interfaces;
+﻿using Application.Abstractions.Interfaces;
 using AutoMapper;
 using Domain.Common;
 using Domain.Entities;

@@ -117,7 +117,10 @@ namespace Application.Features.ManageReservations.CreateReservation
             }
         }
 
-        private async Task<bool> TryAddAsync<T>(IGenericRepository<T, int> repository, T entity, CancellationToken cancellationToken) where T : class
+        private async Task<bool> TryAddAsync<T>(
+            IGenericRepository<T, int> repository, 
+            T entity, 
+            CancellationToken cancellationToken) where T : class
         {
             try
             {
