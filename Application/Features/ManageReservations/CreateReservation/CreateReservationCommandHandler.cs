@@ -1,5 +1,6 @@
 ﻿using Application.Abstractions.Interfaces;
 using Application.DTOs.ReservationDtos;
+using AutoMapper;
 using Domain.Common;
 using Domain.Entities;
 using Domain.Enums;
@@ -9,12 +10,12 @@ using Serilog;
 namespace Application.Features.ManageReservations.CreateReservation
 {
     public class CreateReservationCommandHandler(
-                IGenericRepository<User, int> userRepository,
                 IGenericRepository<Reservation, int> reservationRepository,
                 IGenericRepository<ReservationUserDetail, int> reservationUserRepository,
                 IGenericRepository<ReservedPackage, int> reservedPackageRepository,
                 IGenericRepository<ReservedRoom, int> reservedRoomRepository,
                 IUnitOfWork unitOfWork,
+                IMapper mapper,
                 ILogger logger)
                 : IRequestHandler<CreateReservationCommand, Result<ReservationResultDto>>
     {
@@ -78,7 +79,8 @@ namespace Application.Features.ManageReservations.CreateReservation
                             return Result<ReservationResultDto>.Failure(new Error($"Failed to reserve package with ID {item.ItemId}."));
                         }
 
-                        logger.Information("Reserved package with ID {PackageID} for reservation {ReservationID}.", item.ItemId, reservation.ReservationID);
+                        logger.Information("Reserved package with ID {PackageID} for reservation {ReservationID}.",
+                            item.ItemId, reservation.ReservationID);
                     }
                     else
                     {
@@ -95,7 +97,8 @@ namespace Application.Features.ManageReservations.CreateReservation
                             return Result<ReservationResultDto>.Failure(new Error($"Failed to reserve room with ID {item.ItemId}."));
                         }
 
-                        logger.Information("Reserved room with ID {RoomID} for reservation {ReservationID}.", item.ItemId, reservation.ReservationID);
+                        logger.Information("Reserved room with ID {RoomID} for reservation {ReservationID}.",
+                            item.ItemId, reservation.ReservationID);
                     }
                 }
 

@@ -1,6 +1,8 @@
 ﻿using Application.DTOs.ReservationDtos;
+using Application.Features.ManageReservations.CreateReservation;
 using AutoMapper;
 using Domain.Entities;
+using Domain.Enums;
 
 namespace Application.Profiles
 {
@@ -8,7 +10,6 @@ namespace Application.Profiles
     {
         public ReservationMappingProfile()
         {
-            CreateMap<SelectedPackageDto, ReservedPackage>();
         }
     }
 }
