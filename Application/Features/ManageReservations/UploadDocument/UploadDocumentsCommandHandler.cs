@@ -4,6 +4,7 @@ using Domain.Entities;
 using Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Serilog;
 
 namespace Application.Features.ManageReservations.UploadDocument
 {
@@ -11,7 +12,8 @@ namespace Application.Features.ManageReservations.UploadDocument
             IGenericRepository<Document, int> documentRepository,
             IGenericRepository<Reservation, int> reservationRepository,
             IGoogleDriveService googleDriveService,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            ILogger logger)
             : IRequestHandler<UploadDocumentsCommand, Result<int>>
     {
         public async Task<Result<int>> Handle(
@@ -25,12 +27,14 @@ namespace Application.Features.ManageReservations.UploadDocument
                 var reservation = await reservationRepository.GetByIdAsync(request.ReservationId, cancellationToken);
                 if (reservation == null)
                 {
+                    logger.Information("Reservation Not Found");
                     return Result<int>.Failure(new Error("Reservation not found"));
                 }
 
                 // validate reservation status
                 if (reservation.Status != ReservationStatus.PendingApproval)
                 {
+                    logger.Information("invalid document upload status");
                     return Result<int>.Failure(new Error("Invalid document upload status"));
                 }
 
@@ -38,6 +42,7 @@ namespace Application.Features.ManageReservations.UploadDocument
                 var fileUrl = await googleDriveService.UploadFilesAsync(new List<IFormFile> { request.Document.File });
                 if (!fileUrl.Any())
                 {
+                    logger.Information("file upload failed");
                     return Result<int>.Failure(new Error("Failed to upload document"));
                 }
 
@@ -53,10 +58,12 @@ namespace Application.Features.ManageReservations.UploadDocument
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
 
+                logger.Information("file upload success");
                 return Result<int>.Success(document.DocumentID);
             }
             catch (Exception e)
             {
+                logger.Error("Reservation failed {message}", e.Message);
                 await unitOfWork.RollbackTransactionAsync(cancellationToken);
                 throw;
             }

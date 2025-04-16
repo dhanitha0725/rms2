@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Persistence.DbContexts;
@@ -11,9 +12,11 @@ using Persistence.DbContexts;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(ReservationDbContext))]
-    partial class ReservationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250416055320_ChangeMaxLength2")]
+    partial class ChangeMaxLength2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -44,9 +47,14 @@ namespace Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("DocumentID");
 
                     b.HasIndex("ReservationID");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Documents", (string)null);
                 });
@@ -321,6 +329,12 @@ namespace Persistence.Migrations
                         .HasColumnName("ReservationID");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReservationID"));
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("CreatedBy");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp with time zone")
@@ -598,6 +612,10 @@ namespace Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_Documents_Reservations");
 
+                    b.HasOne("Domain.Entities.User", null)
+                        .WithMany("Documents")
+                        .HasForeignKey("UserId");
+
                     b.Navigation("Reservation");
                 });
 
@@ -828,6 +846,8 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
+                    b.Navigation("Documents");
+
                     b.Navigation("Payments");
 
                     b.Navigation("Reservations");

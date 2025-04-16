@@ -6,6 +6,8 @@ using WebAPI.Middlewares;
 using Identity;
 using Utilities;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // logs data collected during the app startup (using serilog)

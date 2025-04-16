@@ -12,7 +12,6 @@ namespace Domain.Entities
         public decimal Total { get; set; }
         public ReservationStatus Status { get; set; }
         public string UserType { get; set; }
-        public string CreatedBy { get; set; }
         public string? UpdatedBy { get; set; }
 
         public ICollection<Payment>? Payments { get; set; }

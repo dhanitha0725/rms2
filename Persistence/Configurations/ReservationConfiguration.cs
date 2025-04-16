@@ -42,16 +42,15 @@ namespace Persistence.Configurations
                 .IsRequired();
 
             builder.Property(r => r.Status)
-                .HasColumnType("varchar(10)")
-                .HasColumnName("Status")
-                .HasMaxLength(10)
-                .IsRequired();
-
-            builder.Property(r => r.CreatedBy)
                 .HasColumnType("varchar(50)")
-                .HasColumnName("CreatedBy")
+                .HasColumnName("Status")
                 .HasMaxLength(50)
                 .IsRequired();
+
+            builder.Property(r => r.UserType)
+                .HasColumnType("varchar(50)")
+                .HasColumnName("userType")
+                .HasMaxLength(50);
 
             builder.Property(r => r.UpdatedBy)
                 .HasColumnType("varchar(50)")

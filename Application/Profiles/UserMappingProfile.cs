@@ -15,18 +15,18 @@ namespace Application.Profiles
 
             // Map RegisterCustomerDto to User
             CreateMap<RegisterCustomerDto, User>()
-                .ForMember(dest => dest.UserId, opt => opt.Ignore()) 
-                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => "Customer")) 
-                .ForMember(dest => dest.Payments, opt => opt.Ignore()) 
-                .ForMember(dest => dest.Reservations, opt => opt.Ignore()) 
-                .ForMember(dest => dest.Documents, opt => opt.Ignore());
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => "Customer"))
+                .ForMember(dest => dest.Payments, opt => opt.Ignore())
+                .ForMember(dest => dest.Reservations, opt => opt.Ignore());
+           
 
             // map AddUserDto to User
             CreateMap<AddUserDto, User>()
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.Payments, opt => opt.Ignore())
-                .ForMember(dest => dest.Reservations, opt => opt.Ignore())
-                .ForMember(dest => dest.Documents, opt => opt.Ignore());
+                .ForMember(dest => dest.Reservations, opt => opt.Ignore());
+
         }
 
     }
