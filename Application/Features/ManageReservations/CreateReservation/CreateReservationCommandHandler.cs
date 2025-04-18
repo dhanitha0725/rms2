@@ -39,11 +39,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                     CreatedDate = DateTime.UtcNow,
                 };
 
-                if (!await TryAddAsync(reservationRepository, reservation, cancellationToken))
-                {
-                    return Result<ReservationResultDto>.Failure(new Error("Failed to create reservation."));
-                }
-
+                await reservationRepository.AddAsync(reservation, cancellationToken);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
 
                 // Create user details
@@ -57,10 +53,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                     OrganizationName = request.UserDetails.OrganizationName,
                 };
 
-                if (!await TryAddAsync(reservationUserRepository, reservationUserDetails, cancellationToken))
-                {
-                    return Result<ReservationResultDto>.Failure(new Error("Failed to create reservation user details."));
-                }
+                await reservationUserRepository.AddAsync(reservationUserDetails, cancellationToken);
 
                 // Create reserved items
                 foreach (var item in request.Items)
@@ -74,10 +67,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                             status = "reserved"
                         };
 
-                        if (!await TryAddAsync(reservedPackageRepository, reservedPackage, cancellationToken))
-                        {
-                            return Result<ReservationResultDto>.Failure(new Error($"Failed to reserve package with ID {item.ItemId}."));
-                        }
+                        await reservedPackageRepository.AddAsync(reservedPackage, cancellationToken);
 
                         logger.Information("Reserved package with ID {PackageID} for reservation {ReservationID}.",
                             item.ItemId, reservation.ReservationID);
@@ -92,10 +82,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                             EndDate = request.EndDate,
                         };
 
-                        if (!await TryAddAsync(reservedRoomRepository, reservedRoom, cancellationToken))
-                        {
-                            return Result<ReservationResultDto>.Failure(new Error($"Failed to reserve room with ID {item.ItemId}."));
-                        }
+                        await reservedRoomRepository.AddAsync(reservedRoom, cancellationToken);
 
                         logger.Information("Reserved room with ID {RoomID} for reservation {ReservationID}.",
                             item.ItemId, reservation.ReservationID);
@@ -117,23 +104,6 @@ namespace Application.Features.ManageReservations.CreateReservation
                 await unitOfWork.RollbackTransactionAsync(cancellationToken);
                 logger.Error(e, "Error creating reservation");
                 return Result<ReservationResultDto>.Failure(new Error("An error occurred while creating the reservation."));
-            }
-        }
-
-        private async Task<bool> TryAddAsync<T>(
-            IGenericRepository<T, int> repository, 
-            T entity, 
-            CancellationToken cancellationToken) where T : class
-        {
-            try
-            {
-                await repository.AddAsync(entity, cancellationToken);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex, "Error adding entity of type {EntityType}.", typeof(T).Name);
-                return false;
             }
         }
     }
