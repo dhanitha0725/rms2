@@ -13,3 +13,4 @@ namespace Application.Abstractions.Interfaces
         Task<T?> AddRangeAsync (IEnumerable<T> entities, CancellationToken cancellationToken = default);
     }
 }
+    

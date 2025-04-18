@@ -1,6 +1,5 @@
 ﻿using Application.Abstractions.Interfaces;
 using Application.DTOs.ReservationDtos;
-using AutoMapper;
 using Domain.Common;
 using Domain.Entities;
 using Domain.Enums;
@@ -15,7 +14,6 @@ namespace Application.Features.ManageReservations.CreateReservation
                 IGenericRepository<ReservedPackage, int> reservedPackageRepository,
                 IGenericRepository<ReservedRoom, int> reservedRoomRepository,
                 IUnitOfWork unitOfWork,
-                IMapper mapper,
                 ILogger logger)
                 : IRequestHandler<CreateReservationCommand, Result<ReservationResultDto>>
     {
