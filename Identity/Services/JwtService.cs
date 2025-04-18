@@ -23,7 +23,7 @@ namespace Identity.Services
                 {
                     new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString())
+                    new Claim(ClaimTypes.NameIdentifier, user.UserId)
                 };
 
             //add roles to the token

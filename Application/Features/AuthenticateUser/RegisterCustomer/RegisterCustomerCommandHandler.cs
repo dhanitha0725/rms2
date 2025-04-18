@@ -19,6 +19,8 @@ namespace Application.Features.AuthenticateUser.RegisterCustomer
             RegisterCustomerCommand request,
             CancellationToken cancellationToken)
         {
+            // this handler only for customer registrations
+            // automatically assign customer role to the user
             await unitOfWork.BeginTransactionAsync(cancellationToken);
 
             try
@@ -40,7 +42,8 @@ namespace Application.Features.AuthenticateUser.RegisterCustomer
                     request.RegisterCustomerDto.ConfirmPassword);
                 if (!identityResult.IsSuccess)
                 {
-                    logger.Error("Failed to create identity user");
+                    logger.Error("Failed to create identity user: {error}", identityResult.Error);
+                    return (Result<string>)identityResult;
                 }
 
                 var user = mapper.Map<User>(request.RegisterCustomerDto);

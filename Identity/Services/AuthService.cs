@@ -44,6 +44,13 @@ namespace Identity.Services
                 return Result<string>.Failure(new Error("Failed to create user"));
             }
 
+            // add customer role
+            var roleResult = await userManager.AddToRoleAsync(user, "Customer");
+            if (!roleResult.Succeeded)
+            {
+                return Result<string>.Failure(new Error("Failed to assign role"));
+            }
+
             // create user entity
             var userDto = new UserDto
             {
