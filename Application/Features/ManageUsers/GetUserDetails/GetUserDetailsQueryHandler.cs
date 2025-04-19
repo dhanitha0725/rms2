@@ -10,11 +10,15 @@ namespace Application.Features.ManageUsers.GetUserDetails
         : IRequestHandler<GetUserDetailsQuery, List<UserDetailsDto>>
     {
         public async Task<List<UserDetailsDto>> Handle(
-            GetUserDetailsQuery request, 
+            GetUserDetailsQuery request,
             CancellationToken cancellationToken)
         {
             var users = await userRepository.GetAllAsync(cancellationToken);
-            return users.Select(u => new UserDetailsDto
+
+           
+            var filteredUsers = users.Where(u => !u.Role.Equals("customer", StringComparison.OrdinalIgnoreCase));
+
+            return filteredUsers.Select(u => new UserDetailsDto
             {
                 UserId = u.UserId,
                 FirstName = u.FirstName,

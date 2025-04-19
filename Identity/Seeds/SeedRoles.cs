@@ -16,14 +16,14 @@ namespace Identity.Seeds
 
             // add roles
             string[] roleNames =
-            {
-                    "Admin",
+            [
+                "Admin",
                     "Employee",
                     "Accountant",
                     "Hostel",
                     "Customer",
                     "Guest"
-                };
+            ];
 
             foreach (var roleName in roleNames)
             {
@@ -53,16 +53,16 @@ namespace Identity.Seeds
                 if (result.Succeeded)
                 {
                     await userManager.AddToRoleAsync(user, "Admin");
-                    logger.Information($"User {adminEmail} created and added to Admin role");
+                    logger.Information("User {AdminEmail} created and added to Admin role", adminEmail);
                 }
                 else
                 {
-                    logger.Error($"Error creating user {adminEmail}");
+                    logger.Error("Error creating user {AdminEmail}", adminEmail);
                 }
             }
             else
             {
-                logger.Information($"User {adminEmail} already exists");
+                logger.Information("User {AdminEmail} already exists", adminEmail);
             }
         }
     }
