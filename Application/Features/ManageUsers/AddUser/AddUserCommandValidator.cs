@@ -4,6 +4,8 @@ namespace Application.Features.ManageUsers.AddUser
 {
     public class AddUserCommandValidator : AbstractValidator<AddUserCommand>
     {
+        private readonly List<string> _allowedRoles = ["Admin", "Employee", "Accountant", "Hostel"];
+
         public AddUserCommandValidator()
         {
             RuleFor(x => x.AddUserDto.FirstName)
@@ -18,16 +20,10 @@ namespace Application.Features.ManageUsers.AddUser
                 .NotEmpty().WithMessage("Email is required")
                 .EmailAddress().WithMessage("Email is not valid");
 
-            RuleFor(x => x.AddUserDto.Password)
-                .NotEmpty().WithMessage("Password is required")
-                .MinimumLength(8).WithMessage("Password must be at least 8 characters")
-                .Matches("[A-Z]").WithMessage("Password must contain at least one uppercase letter")
-                .Matches("[a-z]").WithMessage("Password must contain at least one lowercase letter")
-                .Matches("[0-9]").WithMessage("Password must contain at least one number")
-                .Matches("[^a-zA-Z0-9]").WithMessage("Password must contain at least one special character");
-
             RuleFor(x => x.AddUserDto.Role)
-                .NotEmpty().WithMessage("Role is required");
+                .NotEmpty().WithMessage("Role is required")
+                .Must(role => _allowedRoles.Contains(role))
+                .WithMessage($"Role must be one of the following: {string.Join(", ", _allowedRoles)}");
 
             RuleFor(x => x.AddUserDto.PhoneNumber)
                 .Matches(@"^\d{10}$").WithMessage("Phone number must be 10 digits");

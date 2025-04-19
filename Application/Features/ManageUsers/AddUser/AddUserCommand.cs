@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Application.Features.ManageUsers.AddUser
 {
-    public class AddUserCommand : IRequest<Result<string>>, IBaseRequest
+    public class AddUserCommand : IRequest<Result<AddUserResponseDto>>
     {
         public AddUserDto AddUserDto { get; set; }
     }

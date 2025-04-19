@@ -1,10 +1,10 @@
 ﻿using MediatR;
 using Application.Abstractions.Interfaces;
+using Application.DTOs.UserDtos;
 using AutoMapper;
 using Domain.Common;
 using Serilog;
 using Domain.Entities;
-using System.Transactions;
 
 namespace Application.Features.ManageUsers.AddUser
 {
@@ -13,15 +13,13 @@ namespace Application.Features.ManageUsers.AddUser
         IMapper mapper,
         ILogger logger,
         IGenericRepository<User, int> userRepository,
-        IAuthService authService) : IRequestHandler<AddUserCommand, Result<string>>
+        IAuthService authService) : IRequestHandler<AddUserCommand, Result<AddUserResponseDto>>
     {
-        
-        public async Task<Result<string>> Handle(
-            AddUserCommand request, 
+
+        public async Task<Result<AddUserResponseDto>>  Handle(
+            AddUserCommand request,
             CancellationToken cancellationToken)
         {
-            //using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-
             await unitOfWork.BeginTransactionAsync(cancellationToken);
 
             try
@@ -31,13 +29,13 @@ namespace Application.Features.ManageUsers.AddUser
 
                 if (userExists)
                 {
-                    logger.Warning($"User with email {request.AddUserDto.Email} already exists.");
-                    return Result<string>.Failure(new Error("User already exists."));
+                    logger.Warning("User with email {Email} already exists.", request.AddUserDto.Email);
+                    return Result<AddUserResponseDto>.Failure(new Error("User already exists."));
                 }
 
                 var identityResult = await authService.AddUserAsync(
                     request.AddUserDto.Email,
-                    request.AddUserDto.Password,
+                    "123456@Rs",
                     request.AddUserDto.Role);
 
                 if (identityResult.IsSuccess)
@@ -52,10 +50,14 @@ namespace Application.Features.ManageUsers.AddUser
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
 
-                //transaction.Complete();
+                logger.Information("User {UserUserId} added successfully", user.UserId);
 
-                logger.Information($"User {user.UserId} added successfully");
-                return Result<string>.Success("User added successfully");
+                var responseDto = new AddUserResponseDto
+                {
+                    UserId = user.UserId
+                };
+
+                return Result<AddUserResponseDto>.Success(responseDto);
             }
             catch (Exception e)
             {

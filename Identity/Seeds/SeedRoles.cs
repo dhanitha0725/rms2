@@ -11,18 +11,17 @@ namespace Identity.Seeds
         {
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            //var logger = serviceProvider.GetRequiredService<ILogger<SeedRoles>>();
             var logger = Log.ForContext(typeof(SeedRoles));
 
             // add roles
             string[] roleNames =
             [
                 "Admin",
-                    "Employee",
-                    "Accountant",
-                    "Hostel",
-                    "Customer",
-                    "Guest"
+                "Employee",
+                "Accountant",
+                "Hostel",
+                "Customer",
+                "Guest"
             ];
 
             foreach (var roleName in roleNames)
