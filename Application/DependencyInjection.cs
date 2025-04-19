@@ -14,7 +14,7 @@ namespace Application
 
             // register mediator
             services.AddMediatR(configuration => {
-                configuration.RegisterServicesFromAssembly(assembly); });
+                configuration.RegisterServicesFromAssembly(assembly);});
 
             // register validators using FluentValidation
             services.AddValidatorsFromAssembly(assembly);

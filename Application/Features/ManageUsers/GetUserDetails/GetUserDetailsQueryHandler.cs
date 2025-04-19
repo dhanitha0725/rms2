@@ -1,13 +1,15 @@
 ﻿using Application.Abstractions.Interfaces;
 using Application.DTOs.UserDtos;
+using AutoMapper;
 using Domain.Entities;
 using MediatR;
 
 namespace Application.Features.ManageUsers.GetUserDetails
 {
     public class GetUserDetailsQueryHandler(
-        IGenericRepository<User, int> userRepository)
-        : IRequestHandler<GetUserDetailsQuery, List<UserDetailsDto>>
+            IGenericRepository<User, int> userRepository,
+            IMapper mapper)
+            : IRequestHandler<GetUserDetailsQuery, List<UserDetailsDto>>
     {
         public async Task<List<UserDetailsDto>> Handle(
             GetUserDetailsQuery request,
@@ -15,18 +17,11 @@ namespace Application.Features.ManageUsers.GetUserDetails
         {
             var users = await userRepository.GetAllAsync(cancellationToken);
 
-           
-            var filteredUsers = users.Where(u => !u.Role.Equals("customer", StringComparison.OrdinalIgnoreCase));
+            var filteredUsers = users.Where(u =>
+                !u.Role.Equals("customer", StringComparison.OrdinalIgnoreCase) &&
+                !u.Role.Equals("guest", StringComparison.OrdinalIgnoreCase));
 
-            return filteredUsers.Select(u => new UserDetailsDto
-            {
-                UserId = u.UserId,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                Email = u.Email,
-                PhoneNumber = u.PhoneNumber,
-                Role = u.Role
-            }).ToList();
+            return mapper.Map<List<UserDetailsDto>>(filteredUsers);
         }
     }
 }

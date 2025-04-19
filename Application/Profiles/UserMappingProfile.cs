@@ -13,7 +13,7 @@ namespace Application.Profiles
                     dest => dest.Roles, opt =>
                     opt.MapFrom(src => new List<string> { "Customer" }));
 
-            // Map RegisterCustomerDto to User
+            // map RegisterCustomerDto to User
             CreateMap<RegisterCustomerDto, User>()
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => "Customer"))
@@ -25,6 +25,10 @@ namespace Application.Profiles
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.Payments, opt => opt.Ignore());
 
+            // map User to UserDetailsDto
+            CreateMap<User, UserDetailsDto>();
+
+            CreateMap<User, CustomerDetailsDto>();
         }
 
     }
