@@ -64,5 +64,10 @@ namespace Persistence.Repositories
             context.Set<T>().Update(entity);
             return Task.CompletedTask;
         }
+
+        public IQueryable<T> LockForUpdate(IQueryable<T> query)
+        {
+            return query.TagWith("FOR UPDATE");
+        }
     }
 }

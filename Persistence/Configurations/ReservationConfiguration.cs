@@ -19,22 +19,22 @@ namespace Persistence.Configurations
 
             builder.Property(e => e.StartDate)
                 .HasColumnName("StartDate")
-                .HasColumnType("date")
+                .HasColumnType("timestamp with time zone")
                 .IsRequired();
 
             builder.Property(e => e.EndDate)
                 .HasColumnName("EndDate")
-                .HasColumnType("date")
+                .HasColumnType("timestamp with time zone")
                 .IsRequired();
 
             builder.Property(e => e.CreatedDate)
                 .HasColumnName("CreatedDate")
-                .HasColumnType("timestamp")
+                .HasColumnType("timestamp with time zone")
                 .IsRequired();
 
             builder.Property(e => e.UpdatedDate)
                 .HasColumnName("UpdatedDate")
-                .HasColumnType("timestamp");
+                .HasColumnType("timestamp with time zone");
 
             builder.Property(r => r.Total)
                 .HasColumnName("Total")
@@ -42,27 +42,21 @@ namespace Persistence.Configurations
                 .IsRequired();
 
             builder.Property(r => r.Status)
-                .HasColumnType("varchar(10)")
-                .HasColumnName("Status")
-                .HasMaxLength(10)
-                .IsRequired();
-
-            builder.Property(r => r.CreatedBy)
                 .HasColumnType("varchar(50)")
-                .HasColumnName("CreatedBy")
+                .HasColumnName("Status")
                 .HasMaxLength(50)
                 .IsRequired();
+
+            builder.Property(r => r.UserType)
+                .HasColumnType("varchar(50)")
+                .HasColumnName("userType")
+                .HasMaxLength(50);
 
             builder.Property(r => r.UpdatedBy)
                 .HasColumnType("varchar(50)")
                 .HasColumnName("UpdatedBy")
                 .HasMaxLength(50);
 
-            // one-to-many relationship with User
-            builder.HasOne(r => r.User)
-                .WithMany(u => u.Reservations)
-                .HasForeignKey(r => r.UserID)
-                .OnDelete(DeleteBehavior.Restrict);
 
             // one-to-many relationship with Payment
             builder.HasMany(r => r.Payments)
@@ -82,6 +76,11 @@ namespace Persistence.Configurations
                 .HasForeignKey(rr => rr.ReservationID)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // one-to-one relationship with ReservationUserDetail
+            builder.HasOne(r => r.ReservationUserDetail)
+                .WithOne(rud => rud.Reservation)
+                .HasForeignKey<ReservationUserDetail>(rud => rud.ReservationID)
+                .OnDelete(DeleteBehavior.Cascade);
 
         }
     }

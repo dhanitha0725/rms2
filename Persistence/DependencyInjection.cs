@@ -9,16 +9,18 @@ namespace Persistence
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddInfrastructure(
+            this IServiceCollection services, 
+            IConfiguration configuration)
         {
             services.AddDbContext<ReservationDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
             services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
+            services.AddScoped<IReservationRepository, ReservationRepository>();
+            services.AddScoped<IRoomRepository, RoomRepository>();
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-            services.AddScoped<IGoogleDriveService, GoogleDriveService>();
 
             return services;
         }

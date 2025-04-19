@@ -1,5 +1,4 @@
-﻿using System.Transactions;
-using Application.Abstractions.Interfaces;
+﻿using Application.Abstractions.Interfaces;
 using AutoMapper;
 using Domain.Common;
 using Domain.Entities;
@@ -20,8 +19,8 @@ namespace Application.Features.AuthenticateUser.RegisterCustomer
             RegisterCustomerCommand request,
             CancellationToken cancellationToken)
         {
-            //using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-
+            // this handler only for customer registrations
+            // automatically assign customer role to the user
             await unitOfWork.BeginTransactionAsync(cancellationToken);
 
             try
@@ -43,20 +42,16 @@ namespace Application.Features.AuthenticateUser.RegisterCustomer
                     request.RegisterCustomerDto.ConfirmPassword);
                 if (!identityResult.IsSuccess)
                 {
-                    logger.Error("Failed to create identity user");
+                    logger.Error("Failed to create identity user: {error}", identityResult.Error);
+                    return (Result<string>)identityResult;
                 }
 
-                // Create user entity using AutoMapper
                 var user = mapper.Map<User>(request.RegisterCustomerDto);
 
-                // Save the user entity to the repository
                 await userRepository.AddAsync(user, cancellationToken);
 
-                // Commit the changes
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
-
-                //transaction.Complete();
 
                 logger.Information($"User {user.UserId} registered successfully");
                 return (Result<string>)identityResult;

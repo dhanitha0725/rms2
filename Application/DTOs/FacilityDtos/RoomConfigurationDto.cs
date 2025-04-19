@@ -7,5 +7,6 @@
         public int Capacity { get; set; }
         public int NumberOfBeds { get; set; }
         public string Status { get; set; } = "Available";
+        public Dictionary<string, decimal> Pricing { get; set; }
     }
 }

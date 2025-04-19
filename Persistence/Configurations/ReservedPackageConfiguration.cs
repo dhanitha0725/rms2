@@ -17,6 +17,9 @@ namespace Persistence.Configurations
                 .HasColumnName("ReservedPackageID")
                 .ValueGeneratedOnAdd();
 
+            builder.Property(rp => rp.status)
+                .HasMaxLength(50);
+
             // one-to-many relationship between ReservedPackage and Package
             builder.HasOne(rp => rp.Package)
                 .WithMany(p => p.ReservedPackages)

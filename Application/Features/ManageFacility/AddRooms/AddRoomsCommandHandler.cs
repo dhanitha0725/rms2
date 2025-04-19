@@ -1,5 +1,4 @@
-﻿using System.Text.RegularExpressions;
-using Application.Abstractions.Interfaces;
+﻿using Application.Abstractions.Interfaces;
 using Application.DTOs.FacilityDtos;
 using Domain.Common;
 using Domain.Entities;
@@ -9,11 +8,12 @@ using Serilog;
 namespace Application.Features.ManageFacility.AddRooms
 {
     public class AddRoomsCommandHandler(
-            IGenericRepository<Facility, int> facilityRepository,
-            IGenericRepository<Room, int> roomRepository,
-            IUnitOfWork unitOfWork,
-            ILogger logger)
-            : IRequestHandler<AddRoomsCommand, Result<RoomConfigurationDto>>
+                    IGenericRepository<Facility, int> facilityRepository,
+                    IGenericRepository<Room, int> roomRepository,
+                    IGenericRepository<RoomPricing, int> roomPricingRepository,
+                    IUnitOfWork unitOfWork,
+                    ILogger logger)
+                    : IRequestHandler<AddRoomsCommand, Result<RoomConfigurationDto>>
     {
         public async Task<Result<RoomConfigurationDto>> Handle(
             AddRoomsCommand request,
@@ -29,29 +29,56 @@ namespace Application.Features.ManageFacility.AddRooms
                     return Result<RoomConfigurationDto>.Failure(new Error("Facility not found"));
                 }
 
-                var existingRooms = await roomRepository.GetAllAsync(cancellationToken);
-                existingRooms = existingRooms.Where(r => r.FacilityID == request.FacilityId);
-
-                var prefix = GetRoomPrefix(facility.FacilityName);
-                var maxNumber = GetMaxRoomNumber(existingRooms);
-                var roomNumbers = GenerateRoomNumbers(prefix, maxNumber, request.RoomConfigurationDto.Quantity);
-
                 // Create rooms
-                var rooms = roomNumbers.Select(rn => new Room
-                {
-                    FacilityID = request.FacilityId,
-                    Type = request.RoomConfigurationDto.RoomType,
-                    Capacity = request.RoomConfigurationDto.Capacity,
-                    RoomNumber = rn,
-                    NumberOfBeds = request.RoomConfigurationDto.NumberOfBeds,
-                    Status = request.RoomConfigurationDto.Status
-                }).ToList();
+                var rooms = Enumerable
+                    .Range(1, request.RoomConfigurationDto.Quantity)
+                    .Select(_ => new Room
+                    {
+                        FacilityID = request.FacilityId,
+                        Type = request.RoomConfigurationDto.RoomType,
+                        Capacity = request.RoomConfigurationDto.Capacity,
+                        NumberOfBeds = request.RoomConfigurationDto.NumberOfBeds,
+                        Status = request.RoomConfigurationDto.Status
+                    }).ToList();
 
                 await roomRepository.AddRangeAsync(rooms, cancellationToken);
+
+                // add or update pricing for the room type
+                foreach (var pricing in request.RoomConfigurationDto.Pricing)
+                {
+                    var sector = pricing.Key;
+                    var price = pricing.Value;
+
+                    //check if pricing exists
+                    var existingPricing = (await roomPricingRepository.GetAllAsync(cancellationToken))
+                        .FirstOrDefault(rp => rp.FacilityID == request.FacilityId &&
+                                              rp.RoomType == request.RoomConfigurationDto.RoomType &&
+                                              rp.Sector == sector);
+
+                    if (existingPricing == null)
+                    {
+                        // add new pricing
+                        var roomPricing = new RoomPricing
+                        {
+                            FacilityID = request.FacilityId,
+                            RoomType = request.RoomConfigurationDto.RoomType,
+                            Sector = sector,
+                            Price = price
+                        };
+
+                        await roomPricingRepository.AddAsync(roomPricing, cancellationToken);
+                    }
+                    else
+                    {
+                        // update existing pricing
+                        existingPricing.Price = price;
+                        await roomPricingRepository.UpdateAsync(existingPricing, cancellationToken);
+                    }
+                }
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
 
-                logger.Information("Rooms added successfully");
+                logger.Information("Rooms and pricing added successfully");
 
                 return Result<RoomConfigurationDto>.Success(request.RoomConfigurationDto);
             }
@@ -60,31 +87,6 @@ namespace Application.Features.ManageFacility.AddRooms
                 await unitOfWork.RollbackTransactionAsync(cancellationToken);
                 logger.Error(e, "Error adding rooms");
                 throw;
-            }
-        }
-
-        private static char GetRoomPrefix(string facilityName)
-        {
-            var firstLetter = facilityName?.Trim().FirstOrDefault(char.IsLetter);
-            return firstLetter.HasValue ? char.ToUpper(firstLetter.Value) : 'R';
-        }
-
-        private static int GetMaxRoomNumber(IEnumerable<Room> existingRooms)
-        {
-            return existingRooms
-                .Select(r => int.TryParse(Regex.Match(r.RoomNumber, @"\d+").Value, out var num) ? num : 0)
-                .DefaultIfEmpty(0)
-                .Max();
-        }
-
-        private static IEnumerable<string> GenerateRoomNumbers(
-            char prefix,
-            int startNumber,
-            int quantity)
-        {
-            for (int i = 1; i <= quantity; i++)
-            {
-                yield return $"{prefix}{(startNumber + i):D3}";
             }
         }
     }

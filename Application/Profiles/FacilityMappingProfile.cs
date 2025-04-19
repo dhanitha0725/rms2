@@ -19,8 +19,7 @@ namespace Application.Profiles
 
             CreateMap<RoomConfigurationDto, Room>()
                 .ForMember(dest => dest.RoomID, opt => opt.Ignore())
-                .ForMember(dest => dest.FacilityID, opt => opt.Ignore())
-                .ForMember(dest => dest.RoomNumber, opt => opt.Ignore());
+                .ForMember(dest => dest.FacilityID, opt => opt.Ignore());
         }
     }
 }

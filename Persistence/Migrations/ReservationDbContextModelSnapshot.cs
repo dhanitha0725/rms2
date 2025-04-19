@@ -44,14 +44,9 @@ namespace Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
-
                     b.HasKey("DocumentID");
 
                     b.HasIndex("ReservationID");
-
-                    b.HasIndex("UserID");
 
                     b.ToTable("Documents", (string)null);
                 });
@@ -84,6 +79,12 @@ namespace Persistence.Migrations
 
                     b.Property<int>("FacilityTypeId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("HasPackages")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("HasRooms")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Location")
                         .IsRequired()
@@ -256,9 +257,6 @@ namespace Persistence.Migrations
                         .HasColumnType("timestamp")
                         .HasColumnName("CreatedDate");
 
-                    b.Property<int>("InvoiceID")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Method")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -324,31 +322,22 @@ namespace Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReservationID"));
 
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("CreatedBy");
-
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("CreatedDate");
 
                     b.Property<DateTime>("EndDate")
-                        .HasColumnType("date")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("EndDate");
 
-                    b.Property<int?>("PackageID")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("StartDate")
-                        .HasColumnType("date")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("StartDate");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("varchar(10)")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
                         .HasColumnName("Status");
 
                     b.Property<decimal>("Total")
@@ -356,23 +345,66 @@ namespace Persistence.Migrations
                         .HasColumnName("Total");
 
                     b.Property<string>("UpdatedBy")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)")
                         .HasColumnName("UpdatedBy");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("UpdatedDate");
 
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
+                    b.Property<string>("UserType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("userType");
 
                     b.HasKey("ReservationID");
 
-                    b.HasIndex("UserID");
-
                     b.ToTable("Reservations", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.ReservationUserDetail", b =>
+                {
+                    b.Property<int>("ReservationUserDetailID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ReservationUserDetailID");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReservationUserDetailID"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("Email");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("FirstName");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("LastName");
+
+                    b.Property<string>("OrganizationName")
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("OrganizationName");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("varchar(15)")
+                        .HasColumnName("PhoneNumber");
+
+                    b.Property<int>("ReservationID")
+                        .HasColumnType("int");
+
+                    b.HasKey("ReservationUserDetailID");
+
+                    b.HasIndex("ReservationID")
+                        .IsUnique();
+
+                    b.ToTable("ReservationUserDetails", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.ReservedPackage", b =>
@@ -387,11 +419,13 @@ namespace Persistence.Migrations
                     b.Property<int>("PackageID")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
                     b.Property<int>("ReservationID")
                         .HasColumnType("int");
+
+                    b.Property<string>("status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.HasKey("ReservedPackageID");
 
@@ -411,11 +445,19 @@ namespace Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReservedRoomID"));
 
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("EndDate");
+
                     b.Property<int>("ReservationID")
                         .HasColumnType("int");
 
                     b.Property<int>("RoomID")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("StartDate");
 
                     b.HasKey("ReservedRoomID");
 
@@ -446,12 +488,6 @@ namespace Persistence.Migrations
                         .HasColumnType("int")
                         .HasColumnName("NumberOfBeds");
 
-                    b.Property<string>("RoomNumber")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("varchar(10)")
-                        .HasColumnName("RoomNumber");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -469,6 +505,41 @@ namespace Persistence.Migrations
                     b.HasIndex("FacilityID");
 
                     b.ToTable("Rooms", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.RoomPricing", b =>
+                {
+                    b.Property<int>("RoomPricingID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("RoomPricingID");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RoomPricingID"));
+
+                    b.Property<int>("FacilityID")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(10,2)")
+                        .HasColumnName("Price");
+
+                    b.Property<string>("RoomType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("RoomType");
+
+                    b.Property<string>("Sector")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("Sector");
+
+                    b.HasKey("RoomPricingID");
+
+                    b.HasIndex("FacilityID");
+
+                    b.ToTable("RoomPricing", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.User", b =>
@@ -522,16 +593,7 @@ namespace Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_Documents_Reservations");
 
-                    b.HasOne("Domain.Entities.User", "User")
-                        .WithMany("Documents")
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_Documents_Users");
-
                     b.Navigation("Reservation");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Entities.Facility", b =>
@@ -627,15 +689,15 @@ namespace Persistence.Migrations
                     b.Navigation("Package");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Reservation", b =>
+            modelBuilder.Entity("Domain.Entities.ReservationUserDetail", b =>
                 {
-                    b.HasOne("Domain.Entities.User", "User")
-                        .WithMany("Reservations")
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.HasOne("Domain.Entities.Reservation", "Reservation")
+                        .WithOne("ReservationUserDetail")
+                        .HasForeignKey("Domain.Entities.ReservationUserDetail", "ReservationID")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.Navigation("Reservation");
                 });
 
             modelBuilder.Entity("Domain.Entities.ReservedPackage", b =>
@@ -687,11 +749,24 @@ namespace Persistence.Migrations
                     b.Navigation("Facility");
                 });
 
+            modelBuilder.Entity("Domain.Entities.RoomPricing", b =>
+                {
+                    b.HasOne("Domain.Entities.Facility", "Facility")
+                        .WithMany("RoomPricings")
+                        .HasForeignKey("FacilityID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Facility");
+                });
+
             modelBuilder.Entity("Domain.Entities.Facility", b =>
                 {
                     b.Navigation("Images");
 
                     b.Navigation("Packages");
+
+                    b.Navigation("RoomPricings");
 
                     b.Navigation("Rooms");
                 });
@@ -726,6 +801,9 @@ namespace Persistence.Migrations
 
                     b.Navigation("Payments");
 
+                    b.Navigation("ReservationUserDetail")
+                        .IsRequired();
+
                     b.Navigation("ReservedPackages");
 
                     b.Navigation("ReservedRooms");
@@ -738,11 +816,7 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
-                    b.Navigation("Documents");
-
                     b.Navigation("Payments");
-
-                    b.Navigation("Reservations");
                 });
 #pragma warning restore 612, 618
         }

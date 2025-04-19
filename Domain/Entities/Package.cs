@@ -7,6 +7,7 @@
         public TimeSpan? Duration { get; set; }
         public int FacilityID { get; set; }
 
+
         public Facility Facility { get; set; }
         public ICollection<ReservedPackage> ReservedPackages { get; set; }
         public ICollection<Pricing> Pricings { get; set; }

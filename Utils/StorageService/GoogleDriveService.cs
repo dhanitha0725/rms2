@@ -1,11 +1,11 @@
-﻿using Google.Apis.Auth.OAuth2;
+﻿using Application.Abstractions.Interfaces;
+using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
 using Google.Apis.Services;
 using Microsoft.AspNetCore.Http;
-using Application.Abstractions.Interfaces;
 using Serilog;
 
-namespace Persistence.Repositories
+namespace Utilities.StorageService
 {
     public class GoogleDriveService(ILogger logger) : IGoogleDriveService
     {
@@ -32,21 +32,21 @@ namespace Persistence.Repositories
             }
         }
 
-        public async Task<List<string>> UploadImagesAsync(List<IFormFile> images)
+        public async Task<List<string>> UploadFilesAsync(List<IFormFile> files)
         {
             var service = GetDriveService();
-            var imageUrls = new List<string>();
+            var fileUrls = new List<string>();
 
-            foreach (var image in images)
+            foreach (var file in files)
             {
                 var fileMetadata = new Google.Apis.Drive.v3.Data.File
                 {
-                    Name = $"{Guid.NewGuid()}_{image.FileName}",
+                    Name = $"{Guid.NewGuid()}_{file.FileName}",
                     Parents = new List<string> { _folderId }
                 };
 
-                await using var stream = image.OpenReadStream();
-                var request = service.Files.Create(fileMetadata, stream, image.ContentType);
+                await using var stream = file.OpenReadStream();
+                var request = service.Files.Create(fileMetadata, stream, file.ContentType);
                 request.Fields = "id";
                 await request.UploadAsync();
 
@@ -64,11 +64,11 @@ namespace Persistence.Repositories
                     await service.Permissions.Create(permission, fileId).ExecuteAsync();
                     
                     var fileUrl = $"https://drive.google.com/uc?id={fileId}";
-                    imageUrls.Add(fileUrl);
+                    fileUrls.Add(fileUrl);
                 }
             }
 
-            return imageUrls;
+            return fileUrls;
         }
     }
 }
