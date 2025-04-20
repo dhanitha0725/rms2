@@ -6,7 +6,7 @@
         public string FacilityName { get; set; }
         public string Location { get; set; }
         public string Description { get; set; }
-        public Dictionary<string, string> Attributes { get; set; }
+        public List<string> Attributes { get; set; }
         public List<string> ImageUrls { get; set; }
         public List<PackageDetailsDto> Packages { get; set; } 
         public List<RoomDetailsDto> Rooms { get; set; } 

@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using System.Text.Json;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -25,7 +26,11 @@ namespace Persistence.Configurations
 
             builder.Property(e => e.Attributes)
                 .HasColumnName("Attributes")
-                .HasColumnType("jsonb");
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, new JsonSerializerOptions()),
+                    v => JsonSerializer.Deserialize<List<string>>(v, new JsonSerializerOptions()) ??
+                         new List<string>());
 
             builder.Property(e => e.Status)
                 .HasColumnName("Status")
@@ -42,7 +47,7 @@ namespace Persistence.Configurations
 
             builder.Property(e => e.Description)
                 .HasColumnName("Description")
-                .HasColumnType("varchar(500)");
+                .HasColumnType("varchar(1000)");
 
             // one-to-many relationship between Facility and FacilityType
             builder.HasOne(f => f.FacilityType)
@@ -60,6 +65,12 @@ namespace Persistence.Configurations
                 .WithOne(rp => rp.Facility)
                 .HasForeignKey(rp => rp.FacilityID)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // one-to-many relationship between Facility and ChildFacilities
+            builder.HasOne(f => f.ParentFacility)
+                .WithMany(f => f.ChildFacilities)
+                .HasForeignKey(f => f.ParentFacilityId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

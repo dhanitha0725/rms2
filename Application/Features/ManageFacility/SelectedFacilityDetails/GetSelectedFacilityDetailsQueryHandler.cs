@@ -36,11 +36,7 @@ namespace Application.Features.ManageFacility.SelectedFacilityDetails
                 .ToList();
 
             // get facility attributes
-            var facilityAttributes = new Dictionary<string, string>();
-            if (!string.IsNullOrEmpty(facility.Attributes))
-            {
-                facilityAttributes = JsonSerializer.Deserialize<Dictionary<string, string>>(facility.Attributes);
-            }
+            var facilityAttributes = new List<string>();
 
             // get packages with pricing
             var packages = (await packageRepository.GetAllAsync(cancellationToken))

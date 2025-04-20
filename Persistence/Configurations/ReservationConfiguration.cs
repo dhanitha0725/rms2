@@ -81,7 +81,6 @@ namespace Persistence.Configurations
                 .WithOne(rud => rud.Reservation)
                 .HasForeignKey<ReservationUserDetail>(rud => rud.ReservationID)
                 .OnDelete(DeleteBehavior.Cascade);
-
         }
     }
 }

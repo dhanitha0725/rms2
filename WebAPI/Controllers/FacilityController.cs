@@ -18,7 +18,7 @@ namespace WebAPI.Controllers
     public class FacilityController(IMediator mediator) : ControllerBase
     {
         [HttpPost]
-        // [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFacility([FromBody] AddFacilityDto addFacilityDto)
         {
             var command = new AddFacilityCommand(addFacilityDto);
@@ -35,6 +35,7 @@ namespace WebAPI.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("new-facility-type")]
         public async Task<IActionResult> AddNewFacilityType([FromBody] AddFacilityTypeDto addFacilityTypeDto)
         {
@@ -48,6 +49,7 @@ namespace WebAPI.Controllers
             return Ok(new { FacilityTypeId = result.Value });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("{facilityId}/images")]
         public async Task<IActionResult> AddFacilityImages(
             [FromRoute] int facilityId,
@@ -104,6 +106,7 @@ namespace WebAPI.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet("admin")]
         public async Task<IActionResult> GetFacilityDetails()
         {

@@ -11,8 +11,6 @@ namespace Application.Features.ManageFacility.AddFacility.Commands;
 public class AddFacilityCommandHandler (
     IGenericRepository<Facility, int> facilityRepository,
     IGenericRepository<FacilityType, int> facilityTypeRepository,
-    IGenericRepository<Image, int> imageRepository,
-    IGoogleDriveService googleDriveService,
     IMapper mapper,
     IUnitOfWork unitOfWork,
     ILogger logger) 
@@ -41,12 +39,6 @@ public class AddFacilityCommandHandler (
             facility.FacilityTypeId = request.FacilityDto.FacilityTypeId;
             facility.CreatedDate = DateTime.UtcNow;
 
-            // Ensure attributes are properly serialized before storing
-            if (request.FacilityDto.Attributes != null)
-            {
-                facility.Attributes = JsonSerializer
-                    .Serialize(request.FacilityDto.Attributes);
-            }
 
             await facilityRepository.AddAsync(facility, cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
