@@ -17,11 +17,14 @@ namespace WebAPI.Controllers
     [Route("api/[controller]")]
     public class FacilityController(IMediator mediator) : ControllerBase
     {
-        [HttpPost]
+        [HttpPost("add-facility")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFacility([FromBody] AddFacilityDto addFacilityDto)
-        {
-            var command = new AddFacilityCommand(addFacilityDto);
+        { 
+            var command = new AddFacilityCommand
+            {
+                FacilityDto = addFacilityDto
+            };
             var result = await mediator.Send(command);
 
             if (!result.IsSuccess)
@@ -30,7 +33,7 @@ namespace WebAPI.Controllers
             }
 
             return Ok(new
-            {
+            { 
                 Facility = result.Value
             });
         }
@@ -49,13 +52,14 @@ namespace WebAPI.Controllers
             return Ok(new { FacilityTypeId = result.Value });
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpPost("{facilityId}/images")]
         public async Task<IActionResult> AddFacilityImages(
             [FromRoute] int facilityId,
-            [FromForm] AddFacilityImagesDto dto)
+            [FromForm] List<IFormFile> files)
         {
-            var command = new AddFacilityImagesCommand(facilityId, dto);
+            var command = new AddFacilityImagesCommand(facilityId, files, "rmscontainer");
+
             var result = await mediator.Send(command);
             if (!result.IsSuccess)
             {

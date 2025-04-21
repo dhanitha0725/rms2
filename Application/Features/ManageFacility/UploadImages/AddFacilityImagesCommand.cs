@@ -1,12 +1,14 @@
-﻿using Application.DTOs.FacilityDtos;
-using Domain.Common;
+﻿using Domain.Common;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 
 namespace Application.Features.ManageFacility.UploadImages
 {
     public record AddFacilityImagesCommand (
         int FacilityId,
-        AddFacilityImagesDto AddFacilityImagesDto): IRequest<Result<List<string>>>
+        List<IFormFile> Files,
+        string ContainerName = "facility-images") : 
+        IRequest<Result<List<string>>>
     {
     }
 }

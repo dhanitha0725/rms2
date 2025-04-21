@@ -9,8 +9,6 @@ namespace Application.Profiles
         public FacilityMappingProfile()
         {
             CreateMap<AddFacilityDto, Facility>()
-                .ForMember(dest => dest.Attributes, opt => opt.Ignore())
-                .ForMember(dest => dest.FacilityTypeId, opt => opt.Ignore())
                 .ForMember(dest => dest.Images, opt => opt.Ignore());
 
             CreateMap<AddFacilityTypeDto, FacilityType>();

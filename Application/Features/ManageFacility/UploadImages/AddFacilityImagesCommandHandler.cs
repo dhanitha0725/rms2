@@ -9,7 +9,7 @@ namespace Application.Features.ManageFacility.UploadImages
     public class AddFacilityImagesCommandHandler (
         IGenericRepository<Image, int> imageRepository,
         IGenericRepository<Facility, int> facilityRepository,
-        IGoogleDriveService driveService,
+        IBlobService blobService,
         IUnitOfWork unitOfWork,
         ILogger logger)
         : IRequestHandler<AddFacilityImagesCommand, Result<List<string>>>
@@ -31,16 +31,21 @@ namespace Application.Features.ManageFacility.UploadImages
                     return Result<List<string>>.Failure(new Error("Facility not found"));
                 }
 
-                //upload images
-                var imageUrls = await driveService.UploadFilesAsync(
-                    request.AddFacilityImagesDto.Images);
+                var imageUrls = new List<string>();
 
-                //save to db
+                foreach (var file in request.Files)
+                {
+                    var blobName = await blobService.UploadFileAsync(file, request.ContainerName);
+                    var url = await blobService.GetFileUrl(blobName, request.ContainerName);
+                    imageUrls.Add(url);
+                }
+
                 var images = imageUrls.Select(url => new Image
                 {
                     FacilityID = request.FacilityId,
-                    ImageUrl = url
+                    ImageUrl = url,
                 }).ToList();
+
 
                 await imageRepository.AddRangeAsync(images, cancellationToken);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -52,7 +57,7 @@ namespace Application.Features.ManageFacility.UploadImages
             {
                 await unitOfWork.RollbackTransactionAsync(cancellationToken);
                 logger.Error(e, "Error uploading images");
-                throw;
+                return Result<List<string>>.Failure(new Error("Error uploading images"));
             }
         }
     }
