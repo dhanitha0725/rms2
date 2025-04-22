@@ -6,8 +6,9 @@ using MediatR;
 namespace Application.Features.ManageFacility.GetFacilityDetails
 {
     public class GetFacilityDetailsQueryHandler(
-        IGenericRepository<Facility, int> facilityRepository)
-        : IRequestHandler<GetFacilityDetailsQuery, List<FacilityDetailsDto>>
+            IGenericRepository<Facility, int> facilityRepository,
+            IGenericRepository<FacilityType, int> facilityTypeRepository)
+            : IRequestHandler<GetFacilityDetailsQuery, List<FacilityDetailsDto>>
     {
         public async Task<List<FacilityDetailsDto>> Handle(
             GetFacilityDetailsQuery request,
@@ -18,6 +19,7 @@ namespace Application.Features.ManageFacility.GetFacilityDetails
             {
                 FacilityId = f.FacilityID,
                 FacilityName = f.FacilityName,
+                Location = f.Location,
                 Status = f.Status
             }).ToList();
         }

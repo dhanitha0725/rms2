@@ -1,5 +1,4 @@
 ﻿using Application.Abstractions.Interfaces;
-using Azure.Storage.Blobs;
 using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

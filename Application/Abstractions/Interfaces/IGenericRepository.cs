@@ -11,6 +11,7 @@ namespace Application.Abstractions.Interfaces
         Task DeleteAsync(Tid id, CancellationToken cancellationToken = default);
         Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken);
         Task<T?> AddRangeAsync (IEnumerable<T> entities, CancellationToken cancellationToken = default);
+        Task<T?> GetByIdWithIncludeAsync(Tid id, params Expression<Func<T, object>>[] includes);
     }
 }
     

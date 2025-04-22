@@ -5,6 +5,7 @@ using Application.Features.ManageFacility.FacilityCardDetails;
 using Application.Features.ManageFacility.GetFacilityDetails;
 using Application.Features.ManageFacility.GetFacilityNames;
 using Application.Features.ManageFacility.GetFacilityTypes;
+using Application.Features.ManageFacility.GetFullFacilityDetails;
 using Application.Features.ManageFacility.UpdateFacility;
 using Application.Features.ManageFacility.UploadImages;
 using MediatR;
@@ -125,6 +126,25 @@ namespace WebAPI.Controllers
             var query = new GetFacilityCardsQuery();
             var result = await mediator.Send(query);
             return Ok(result);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("{facilityId}/full-facility-details")]
+        public async Task<IActionResult> GetFullFacilityDetailsQuery([FromRoute] int facilityId)
+        {
+            var query = new GetFullFacilityDetailsQuery
+            {
+                FacilityId = facilityId
+            };
+
+            var result = await mediator.Send(query);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { Error = result.Error.Message });
+            }
+
+            return Ok(result.Value);
         }
     }
 }

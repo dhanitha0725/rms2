@@ -7,7 +7,7 @@ namespace Application.Features.ManageFacility.UploadImages
     public record AddFacilityImagesCommand (
         int FacilityId,
         List<IFormFile> Files,
-        string ContainerName = "facility-images") : 
+        string ContainerName = "rmscontainer") : 
         IRequest<Result<List<string>>>
     {
     }

@@ -6,12 +6,12 @@ using Persistence.DbContexts;
 namespace Persistence.Repositories
 {
     public class GenericRepository<T, Tid>(
-        ReservationDbContext context) 
+        ReservationDbContext context)
         : IGenericRepository<T, Tid>
         where T : class
     {
         public async Task<T> AddAsync(
-            T entity, 
+            T entity,
             CancellationToken cancellationToken = default)
         {
             await context.Set<T>().AddAsync(entity, cancellationToken);
@@ -19,7 +19,7 @@ namespace Persistence.Repositories
         }
 
         public async Task DeleteAsync(
-            Tid id, 
+            Tid id,
             CancellationToken cancellationToken = default)
         {
             var entity = await GetByIdAsync(id, cancellationToken);
@@ -30,14 +30,14 @@ namespace Persistence.Repositories
         }
 
         public async Task<bool> ExistsAsync(
-            Expression<Func<T, bool>> predicate, 
+            Expression<Func<T, bool>> predicate,
             CancellationToken cancellationToken)
         {
             return await context.Set<T>().AnyAsync(predicate, cancellationToken);
         }
 
         public async Task<T?> AddRangeAsync(
-            IEnumerable<T> entities, 
+            IEnumerable<T> entities,
             CancellationToken cancellationToken = default)
         {
             await context.Set<T>().AddRangeAsync(entities, cancellationToken);
@@ -51,14 +51,14 @@ namespace Persistence.Repositories
         }
 
         public async Task<T?> GetByIdAsync(
-            Tid id, 
+            Tid id,
             CancellationToken cancellationToken = default)
         {
             return await context.Set<T>().FindAsync([id], cancellationToken);
         }
 
         public Task UpdateAsync(
-            T entity, 
+            T entity,
             CancellationToken cancellationToken = default)
         {
             context.Set<T>().Update(entity);
@@ -68,6 +68,40 @@ namespace Persistence.Repositories
         public IQueryable<T> LockForUpdate(IQueryable<T> query)
         {
             return query.TagWith("FOR UPDATE");
+        }
+
+        public async Task<T?> GetByIdWithIncludeAsync(
+            Tid id,
+            params Expression<Func<T, object>>[] includes)
+        {
+            var query = context.Set<T>().AsQueryable();
+
+            // Apply includes
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+
+            // Get entity's primary key property name
+            var entityType = context.Model.FindEntityType(typeof(T));
+            var primaryKey = entityType?.FindPrimaryKey();
+            var pkProperty = primaryKey?.Properties.FirstOrDefault();
+
+            if (pkProperty == null)
+            {
+                throw new InvalidOperationException($"Entity {typeof(T).Name} has no primary key defined");
+            }
+
+            // Build predicate expression
+            var parameter = Expression.Parameter(typeof(T), "e");
+            var property = Expression.Property(parameter, pkProperty.Name);
+            var equals = Expression.Equal(
+                property,
+                Expression.Constant(id)
+            );
+            var lambda = Expression.Lambda<Func<T, bool>>(equals, parameter);
+
+            return await query.FirstOrDefaultAsync(lambda);
         }
     }
 }
