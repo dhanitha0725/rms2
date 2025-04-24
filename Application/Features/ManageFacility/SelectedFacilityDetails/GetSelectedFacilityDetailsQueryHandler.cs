@@ -36,7 +36,7 @@ namespace Application.Features.ManageFacility.SelectedFacilityDetails
                 .ToList();
 
             // get facility attributes
-            var facilityAttributes = new List<string>();
+            var facilityAttributes = facility.Attributes ?? new List<string>();
 
             // get packages with pricing
             var packages = (await packageRepository.GetAllAsync(cancellationToken))

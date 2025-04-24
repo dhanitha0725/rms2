@@ -2,7 +2,9 @@
 using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Utilities.BackgroundJobs;
 using Utilities.EmailService;
+using Utilities.PaymentGateway;
 using Utilities.StorageService;
 
 namespace Utilities
@@ -32,8 +34,11 @@ namespace Utilities
             var blobConnection = configuration.GetConnectionString("AzureBlobStorageConnectionString");
             services.AddSingleton<IBlobService>(new BlobService(blobConnection));
 
+            // register payment services
+            services.Configure<PayhereSettings>(configuration.GetSection("PayhereSettings"));
+            services.AddScoped<IPayhereService, PayhereService>();
+
             return services;
         }
-
     }
 }

@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
-namespace Utilities
+namespace Utilities.BackgroundJobs
 {
     public class QueuedHostedService(
         IBackgroundTaskQueue queue,

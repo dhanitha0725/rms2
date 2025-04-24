@@ -1,7 +1,7 @@
 ﻿using System.Threading.Channels;
 using Application.Abstractions.Interfaces;
 
-namespace Utilities
+namespace Utilities.BackgroundJobs
 {
     public class BackgroundTaskQueue : IBackgroundTaskQueue
     {

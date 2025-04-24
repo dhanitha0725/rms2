@@ -3,7 +3,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.Http;
 
-namespace Utilities
+namespace Utilities.StorageService
 {
     public class BlobService(string connectionString) : IBlobService
     {
