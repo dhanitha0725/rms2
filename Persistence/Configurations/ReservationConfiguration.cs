@@ -52,12 +52,6 @@ namespace Persistence.Configurations
                 .HasColumnName("userType")
                 .HasMaxLength(50);
 
-            builder.Property(r => r.UpdatedBy)
-                .HasColumnType("varchar(50)")
-                .HasColumnName("UpdatedBy")
-                .HasMaxLength(50);
-
-
             // one-to-many relationship with Payment
             builder.HasMany(r => r.Payments)
                 .WithOne(p => p.Reservation)

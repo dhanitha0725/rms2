@@ -46,11 +46,11 @@ namespace Persistence.Configurations
                 .HasForeignKey(p => p.ReservationID)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // One-to-many relationship between Payment and User
+            // One-to-many relationship with ReservationUserDetail
             builder.HasOne(p => p.User)
-                .WithMany(u => u.Payments)
-                .HasForeignKey(p => p.UserID)
-                .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(rud => rud.Payments)
+                .HasForeignKey(p => p.ReservationUserID)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

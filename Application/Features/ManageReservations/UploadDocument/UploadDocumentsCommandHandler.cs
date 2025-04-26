@@ -50,7 +50,7 @@ namespace Application.Features.ManageReservations.UploadDocument
                 {
                     DocumentType = request.Document.DocumentType,
                     Url = fileUrl.First(),
-                    ReservationID = reservation.ReservationID,
+                    ReservationId = reservation.ReservationID,
                 };
 
                 await documentRepository.AddAsync(document, cancellationToken);

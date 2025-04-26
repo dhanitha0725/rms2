@@ -11,10 +11,11 @@
         public string Status { get; set; }
         public string GatewayTransactionID { get; set; }
         public int ReservationID { get; set; }
-        public int UserID { get; set; }
+        public int ReservationUserID { get; set; }
 
         public Reservation Reservation { get; set; }
-        public User User { get; set; }
+        public ReservationUserDetail User { get; set; }
         public ICollection<InvoicePayment> InvoicePayments { get; set; }
+        public ICollection<Document> Documents { get; set; }
     }
 }
