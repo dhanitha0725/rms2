@@ -1,5 +1,7 @@
 ﻿using Application.Abstractions.Interfaces;
 using Application.DTOs.Payment;
+using Application.Features.ManagePayments.CreatePayment;
+using Application.Features.ManagePayments.UpdatePaymentStatus;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,22 +15,35 @@ namespace WebAPI.Controllers
         : ControllerBase
     {
         [HttpPost("checkout")]
-        public IActionResult InitiatePayment([FromBody] PaymentRequest paymentRequest)
+        public async Task<IActionResult> Checkout([FromBody] CreatePaymentCommand request)
         {
-            var response = payhereService.PrepareCheckout(paymentRequest);
-            return Ok(response);
+            var response = await mediator.Send(request);
+            if (response.IsSuccess)
+            {
+                return Ok(response.Value);
+            }
+            return BadRequest(response.Error);
         }
 
         [HttpPost("webhook")]
         [Consumes("application/x-www-form-urlencoded")]
-        public async Task<IActionResult> Webhook([FromBody] WebhookNotification notification)
+        public async Task<IActionResult> Webhook([FromForm] WebhookNotification notification)
         {
-            var isValid = payhereService.VerifyWebhook(notification);
-            if (!isValid)
+            var request = new UpdatePaymentStatusCommand(
+                notification.MerchantId,
+                notification.OrderId,
+                notification.PaymentId,
+                notification.PayhereAmount,
+                notification.PayhereCurrency,
+                notification.StatusCode,
+                notification.Md5Sig);
+
+            var response = await mediator.Send(request);
+            if (response.IsSuccess)
             {
-                return BadRequest("Invalid webhook notification");
+                return Ok(response.Value);
             }
-            return Ok();
+            return BadRequest(response.Error);
         }
     }
 }

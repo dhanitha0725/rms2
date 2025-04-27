@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using Application.Abstractions.Interfaces;
 using Application.DTOs.Payment;
@@ -34,17 +35,21 @@ namespace Utilities.PaymentGateway
                 ReturnUrl = _settings.ReturnUrl,
                 CancelUrl = _settings.CancelUrl,
                 NotifyUrl = _settings.NotifyUrl,
+                ActionUrl = _settings.BaseUrl,
                 Hash = hash,
-                // Other parameters from request
             };
         }
         public bool VerifyWebhook(WebhookNotification notification)
         {
+            // hash the merchant secret
             var hashedSecret = ComputeMD5(_settings.MerchantSecret);
+
+       
+            // compute the local hash
             var localHash = ComputeMD5(
                 notification.MerchantId +
                 notification.OrderId +
-                notification.PayhereAmount +
+                notification.PayhereAmount + 
                 notification.PayhereCurrency +
                 notification.StatusCode +
                 hashedSecret
@@ -67,6 +72,4 @@ namespace Utilities.PaymentGateway
             return sb.ToString();
         }
     }
-
-
 }
