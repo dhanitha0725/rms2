@@ -6,20 +6,32 @@ using Serilog;
 
 namespace Application.Features.ManageFacility.AddFacilityType
 {
-    public class AddFacilityTypeCommandHandler (
-        IGenericRepository<FacilityType, int> facilityTypeRepository,
-        IUnitOfWork unitOfWork,
-        ILogger logger) 
-        : IRequestHandler<AddFacilityTypeCommand, Result<int>>
+    public class AddFacilityTypeCommandHandler(
+            IGenericRepository<FacilityType, int> facilityTypeRepository,
+            IUnitOfWork unitOfWork,
+            ILogger logger)
+            : IRequestHandler<AddFacilityTypeCommand, Result<int>>
     {
         public async Task<Result<int>> Handle(
-            AddFacilityTypeCommand request, 
+            AddFacilityTypeCommand request,
             CancellationToken cancellationToken)
         {
-            await unitOfWork.BeginTransactionAsync(cancellationToken);
-
             try
             {
+                // Check if a facility type with the same name already exists
+                var facilityTypeExists = await facilityTypeRepository.ExistsAsync(
+                    ft => ft.TypeName.ToLower() == request.FacilityTypeDto.TypeName.ToLower(),
+                    cancellationToken);
+
+                if (facilityTypeExists)
+                {
+                    logger.Warning("Attempted to add duplicate facility type: {TypeName}",
+                        request.FacilityTypeDto.TypeName);
+                    return Result<int>.Failure(new Error($"A facility type with the name '{request.FacilityTypeDto.TypeName}' already exists."));
+                }
+
+                await unitOfWork.BeginTransactionAsync(cancellationToken);
+
                 var newFacilityType = new FacilityType
                 {
                     TypeName = request.FacilityTypeDto.TypeName
