@@ -95,6 +95,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                     ReservationId = reservation.ReservationID,
                     TotalPrice = reservation.Total,
                     Status = reservation.Status.ToString(),
+                    OrderId = reservation.ReservationID.ToString()
                 });
             }
             catch (Exception e)

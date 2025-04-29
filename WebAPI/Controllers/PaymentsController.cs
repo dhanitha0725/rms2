@@ -10,7 +10,6 @@ namespace WebAPI.Controllers
     [ApiController]
     [Route("api/[controller]")]
     public class PaymentsController(
-        IPayhereService payhereService,
         IMediator mediator)
         : ControllerBase
     {

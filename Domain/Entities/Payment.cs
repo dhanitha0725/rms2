@@ -9,7 +9,7 @@
         public string Currency { get; set; }
         public DateTime CreatedDate { get; set; }
         public string Status { get; set; }
-        public string GatewayTransactionID { get; set; }
+        public string? GatewayTransactionID { get; set; }
         public int ReservationID { get; set; }
         public int ReservationUserID { get; set; }
 
