@@ -1,9 +1,11 @@
 ﻿using Application.Abstractions.Interfaces;
 using Application.DTOs.ReservationDtos;
+using Application.EventHandlers;
 using Domain.Common;
 using Domain.Entities;
 using Domain.Enums;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 namespace Application.Features.ManageReservations.CreateReservation
@@ -13,6 +15,8 @@ namespace Application.Features.ManageReservations.CreateReservation
                 IGenericRepository<ReservationUserDetail, int> reservationUserRepository,
                 IGenericRepository<ReservedPackage, int> reservedPackageRepository,
                 IGenericRepository<ReservedRoom, int> reservedRoomRepository,
+                IBackgroundTaskQueue backgroundTaskQueue,
+                IServiceScopeFactory serviceScopeFactory,
                 IUnitOfWork unitOfWork,
                 ILogger logger)
                 : IRequestHandler<CreateReservationCommand, Result<ReservationResultDto>>
@@ -90,6 +94,12 @@ namespace Application.Features.ManageReservations.CreateReservation
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
 
+                if (reservation.Status == ReservationStatus.PendingPayment)
+                {
+                    // scheduled task: change status to expired after 30 minutes
+                    ScheduleReservationExpiration(reservation.ReservationID);
+                }
+
                 return Result<ReservationResultDto>.Success(new ReservationResultDto
                 {
                     ReservationId = reservation.ReservationID,
@@ -104,6 +114,27 @@ namespace Application.Features.ManageReservations.CreateReservation
                 logger.Error(e, "Error creating reservation");
                 return Result<ReservationResultDto>.Failure(new Error("An error occurred while creating the reservation."));
             }
+        }
+
+        private void ScheduleReservationExpiration(int reservationId)
+        {
+            // Queue the expiration task to run after 30 minutes
+            backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
+            {
+                // Wait for 30 minutes
+                await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
+
+                // Create the expiration task
+                var expireTask = new ExpireReservationTask(
+                    reservationId,
+                    serviceScopeFactory,
+                    logger);
+
+                // Execute the task
+                await expireTask.Execute(cancellationToken);
+            });
+
+            logger.Information("Scheduled expiration for reservation {ReservationId} in 30 minutes.", reservationId);
         }
     }
 }
