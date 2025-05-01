@@ -33,7 +33,7 @@ namespace WebAPI.Controllers
                 notification.MerchantId,
                 notification.OrderId,
                 notification.PaymentId,
-                notification.PayhereAmount,
+                notification.payhere_amount.ToString(),
                 notification.PayhereCurrency,
                 notification.StatusCode,
                 notification.Md5Sig);
