@@ -40,10 +40,16 @@ namespace Persistence.Configurations
                 .HasColumnName("OrganizationName")
                 .HasColumnType("varchar(100)");
 
-            //one-to-one relationship with Reservation
+            // One-to-one relationship with Reservation
             builder.HasOne(rud => rud.Reservation)
                 .WithOne(r => r.ReservationUserDetail)
                 .HasForeignKey<ReservationUserDetail>(rud => rud.ReservationID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // One-to-many relationship with Payment
+            builder.HasMany(rud => rud.Payments)
+                .WithOne(p => p.User)
+                .HasForeignKey(p => p.ReservationUserID)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

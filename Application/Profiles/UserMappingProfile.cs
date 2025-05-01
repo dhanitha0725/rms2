@@ -16,14 +16,12 @@ namespace Application.Profiles
             // map RegisterCustomerDto to User
             CreateMap<RegisterCustomerDto, User>()
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
-                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => "Customer"))
-                .ForMember(dest => dest.Payments, opt => opt.Ignore());
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => "Customer"));
            
 
             // map AddUserDto to User
             CreateMap<AddUserDto, User>()
-                .ForMember(dest => dest.UserId, opt => opt.Ignore())
-                .ForMember(dest => dest.Payments, opt => opt.Ignore());
+                .ForMember(dest => dest.UserId, opt => opt.Ignore());
 
             // map User to UserDetailsDto
             CreateMap<User, UserDetailsDto>();

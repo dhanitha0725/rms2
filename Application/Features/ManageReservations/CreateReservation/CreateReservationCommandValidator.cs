@@ -13,6 +13,9 @@ namespace Application.Features.ManageReservations.CreateReservation
                 .NotEmpty().WithMessage("EndDate is required.")
                 .GreaterThan(x => x.StartDate).WithMessage("EndDate must be after StartDate.");
 
+            RuleFor(x => x.UserDetails)
+                .NotNull().WithMessage("User details are required.");
+
             // validate total
             RuleFor(x => x.Total)
                 .GreaterThan(0).WithMessage("Total must be greater than 0.");
@@ -39,6 +42,14 @@ namespace Application.Features.ManageReservations.CreateReservation
                     .Must(type => type.Equals("package", StringComparison.OrdinalIgnoreCase) || 
                                   type.Equals("room", StringComparison.OrdinalIgnoreCase))
                     .WithMessage("Type must be either 'package' or 'room'.");
+            });
+
+            RuleForEach(x => x.Items).ChildRules(items =>
+            {
+                items.RuleFor(i => i.ItemId)
+                    .GreaterThan(0).WithMessage("Item ID must be greater than 0.");
+                items.RuleFor(i => i.Quantity)
+                    .GreaterThan(0).WithMessage("Quantity must be greater than 0.");
             });
 
             // validate user details

@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using Application.Abstractions.Interfaces;
 using Application.DTOs.Payment;
@@ -18,7 +19,7 @@ namespace Utilities.PaymentGateway
         public PaymentInitiationResponse PrepareCheckout(PaymentRequest request)
         {
             var hashedSecret = ComputeMD5(_settings.MerchantSecret);
-            var amountFormatted = request.Amount.ToString("F2");
+            var amountFormatted = request.Amount.ToString("F2", CultureInfo.InvariantCulture);
 
             var hash = ComputeMD5(
                 _settings.MerchantId +
@@ -30,21 +31,37 @@ namespace Utilities.PaymentGateway
 
             return new PaymentInitiationResponse
             {
-                MerchantId = _settings.MerchantId,
-                ReturnUrl = _settings.ReturnUrl,
-                CancelUrl = _settings.CancelUrl,
-                NotifyUrl = _settings.NotifyUrl,
+                ActionUrl = _settings.BaseUrl,       // "https://sandbox.payhere.lk/pay/checkout"
+                MerchantId = _settings.MerchantId,   // From settings
+                ReturnUrl = _settings.ReturnUrl,     // "http://localhost:5173/payment/status"
+                CancelUrl = _settings.CancelUrl,     // "http://localhost:5173/payment/cancel"
+                NotifyUrl = _settings.NotifyUrl,     // "https://d6f3-192-248-24-51.ngrok-free.app/"
                 Hash = hash,
-                // Other parameters from request
+                FirstName = request.FirstName,       
+                LastName = request.LastName,         
+                Email = request.Email,               
+                Phone = request.Phone,               
+                Address = request.Address,           
+                City = request.City,                 
+                Country = request.Country,           
+                Items = request.Items,               
+                OrderId = request.OrderId,           
+                Currency = request.Currency,         
+                Amount = request.Amount,             
+                AmountFormatted = amountFormatted    
             };
         }
         public bool VerifyWebhook(WebhookNotification notification)
         {
+            // hash the merchant secret
             var hashedSecret = ComputeMD5(_settings.MerchantSecret);
+
+       
+            // compute the local hash
             var localHash = ComputeMD5(
                 notification.MerchantId +
                 notification.OrderId +
-                notification.PayhereAmount +
+                notification.PayhereAmount + 
                 notification.PayhereCurrency +
                 notification.StatusCode +
                 hashedSecret
@@ -67,6 +84,4 @@ namespace Utilities.PaymentGateway
             return sb.ToString();
         }
     }
-
-
 }

@@ -11,5 +11,6 @@
         public string? OrganizationName { get; set; }
 
         public Reservation Reservation { get; set; }
+        public ICollection<Payment> Payments { get; set; }
     }
 }

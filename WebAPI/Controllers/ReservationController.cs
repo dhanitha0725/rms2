@@ -1,5 +1,6 @@
 ﻿using Application.DTOs.ReservationDtos;
 using Application.Features.ManageFacility.SelectedFacilityDetails;
+using Application.Features.ManagePayments.CreatePayment;
 using Application.Features.ManageReservations.CalculateTotal;
 using Application.Features.ManageReservations.CheckAvailability;
 using Application.Features.ManageReservations.CreateReservation;
@@ -11,7 +12,7 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ReservationController(IMediator mediator) : ControllerBase
+    public class ReservationController(IMediator mediator  ) : ControllerBase
     {
         [HttpPost("checkAvailability")]
         public async Task<IActionResult> CheckAvailability([FromBody] CheckAvailabilityDto dto)
@@ -60,7 +61,6 @@ namespace WebAPI.Controllers
             {
                 return BadRequest(result.Error);
             }
-
             return Ok(result);
         }
 

@@ -15,6 +15,8 @@ namespace Application.Profiles
             CreateMap<AddFacilityTypeDto, FacilityType>();
 
             CreateMap<FacilityType, GetFacilityTypeDto>();
+               // .ForMember(dest => dest.TypeId, 
+                //    opt => opt.MapFrom(src => src.FacilityTypeId));
 
             CreateMap<RoomConfigurationDto, Room>()
                 .ForMember(dest => dest.RoomID,

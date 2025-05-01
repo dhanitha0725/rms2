@@ -26,11 +26,18 @@ namespace Persistence.Configurations
             builder.Property(d => d.Url)
                 .IsRequired();
 
-            // one-to-many relationship between Document and Reservation
+            // One-to-many relationship between Document and Reservation
             builder.HasOne(d => d.Reservation)
                 .WithMany(r => r.Documents)
-                .HasForeignKey(d => d.ReservationID)
+                .HasForeignKey(d => d.ReservationId)
                 .HasConstraintName("FK_Documents_Reservations")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // One-to-many relationship between Document and Payment
+            builder.HasOne(d => d.Payment)
+                .WithMany(p => p.Documents)
+                .HasForeignKey(d => d.PaymentId)
+                .HasConstraintName("FK_Documents_Payments")
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

@@ -21,6 +21,8 @@ namespace Application.DTOs.ReservationDtos
         public int ReservationId { get; set; }
         public decimal TotalPrice { get; set; }
         public string Status { get; set; }
+        public string OrderId { get; set; }
+        public decimal Total { get; set; }
     }
 
     public class DocumentDto

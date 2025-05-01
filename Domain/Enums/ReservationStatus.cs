@@ -3,11 +3,11 @@
     public enum ReservationStatus
     {
         PendingApproval,
-        PaymentPending,
         PendingPayment,
         Approved,
         Completed,
         Cancelled,
+        Confirmed,
         Expired
     }
 }

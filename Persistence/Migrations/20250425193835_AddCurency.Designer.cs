@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Persistence.DbContexts;
@@ -11,9 +12,11 @@ using Persistence.DbContexts;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(ReservationDbContext))]
-    partial class ReservationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250425193835_AddCurency")]
+    partial class AddCurency
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -37,10 +40,7 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(30)")
                         .HasColumnName("DocumentType");
 
-                    b.Property<Guid?>("PaymentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("ReservationId")
+                    b.Property<int>("ReservationID")
                         .HasColumnType("int");
 
                     b.Property<string>("Url")
@@ -49,9 +49,7 @@ namespace Persistence.Migrations
 
                     b.HasKey("DocumentID");
 
-                    b.HasIndex("PaymentId");
-
-                    b.HasIndex("ReservationId");
+                    b.HasIndex("ReservationID");
 
                     b.ToTable("Documents", (string)null);
                 });
@@ -258,7 +256,7 @@ namespace Persistence.Migrations
                         .HasColumnName("AmountPaid");
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp")
                         .HasColumnName("CreatedDate");
 
                     b.Property<string>("Currency")
@@ -266,6 +264,7 @@ namespace Persistence.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("GatewayTransactionID")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Method")
@@ -281,20 +280,20 @@ namespace Persistence.Migrations
                     b.Property<int>("ReservationID")
                         .HasColumnType("int");
 
-                    b.Property<int>("ReservationUserID")
-                        .HasColumnType("int");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("varchar(30)")
                         .HasColumnName("Status");
 
+                    b.Property<int>("UserID")
+                        .HasColumnType("int");
+
                     b.HasKey("PaymentID");
 
                     b.HasIndex("ReservationID");
 
-                    b.HasIndex("ReservationUserID");
+                    b.HasIndex("UserID");
 
                     b.ToTable("Payments", (string)null);
                 });
@@ -358,6 +357,11 @@ namespace Persistence.Migrations
                     b.Property<decimal>("Total")
                         .HasColumnType("decimal(12,2)")
                         .HasColumnName("Total");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("UpdatedBy");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("timestamp with time zone")
@@ -596,19 +600,12 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Entities.Document", b =>
                 {
-                    b.HasOne("Domain.Entities.Payment", "Payment")
-                        .WithMany("Documents")
-                        .HasForeignKey("PaymentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("FK_Documents_Payments");
-
                     b.HasOne("Domain.Entities.Reservation", "Reservation")
                         .WithMany("Documents")
-                        .HasForeignKey("ReservationId")
+                        .HasForeignKey("ReservationID")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("FK_Documents_Reservations");
-
-                    b.Navigation("Payment");
 
                     b.Navigation("Reservation");
                 });
@@ -691,10 +688,10 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.ReservationUserDetail", "User")
+                    b.HasOne("Domain.Entities.User", "User")
                         .WithMany("Payments")
-                        .HasForeignKey("ReservationUserID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Reservation");
@@ -816,8 +813,6 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Entities.Payment", b =>
                 {
-                    b.Navigation("Documents");
-
                     b.Navigation("InvoicePayments");
                 });
 
@@ -837,14 +832,14 @@ namespace Persistence.Migrations
                     b.Navigation("ReservedRooms");
                 });
 
-            modelBuilder.Entity("Domain.Entities.ReservationUserDetail", b =>
-                {
-                    b.Navigation("Payments");
-                });
-
             modelBuilder.Entity("Domain.Entities.Room", b =>
                 {
                     b.Navigation("ReservedRooms");
+                });
+
+            modelBuilder.Entity("Domain.Entities.User", b =>
+                {
+                    b.Navigation("Payments");
                 });
 #pragma warning restore 612, 618
         }
