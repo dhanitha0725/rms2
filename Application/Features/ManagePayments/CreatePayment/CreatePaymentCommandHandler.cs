@@ -11,8 +11,9 @@ namespace Application.Features.ManagePayments.CreatePayment
         IPayhereService payhereService,
         IUnitOfWork unitOfWork,
         ILogger logger,
-        IGenericRepository<Payment, Guid> paymentRepository) :
-        IRequestHandler<CreatePaymentCommand, Result<PaymentInitiationResponse>>
+        IGenericRepository<Payment, Guid> paymentRepository,
+        IGenericRepository<ReservationUserDetail, int> reservationUseRepository) 
+        : IRequestHandler<CreatePaymentCommand, Result<PaymentInitiationResponse>>
     {
         public async Task<Result<PaymentInitiationResponse>> Handle(
             CreatePaymentCommand request, 
@@ -22,6 +23,14 @@ namespace Application.Features.ManagePayments.CreatePayment
 
             try
             {
+                // fetch the reservation user id for the given reservation id
+                var reservationUserDetail = await reservationUseRepository.GetByIdAsync(request.ReservationId, cancellationToken);
+
+                if (reservationUserDetail == null)
+                {
+                    return Result<PaymentInitiationResponse>.Failure(new Error("Reservation user detail not found."));
+                }
+
                 var payment = new Payment
                 {
                     OrderID = request.OrderId,
@@ -30,6 +39,8 @@ namespace Application.Features.ManagePayments.CreatePayment
                     CreatedDate = DateTime.UtcNow,
                     Status = "Pending",
                     Method = "Online",
+                    ReservationID = request.ReservationId,
+                    ReservationUserID = reservationUserDetail.ReservationUserDetailID,
                 };
 
                 await paymentRepository.AddAsync(payment, cancellationToken);
