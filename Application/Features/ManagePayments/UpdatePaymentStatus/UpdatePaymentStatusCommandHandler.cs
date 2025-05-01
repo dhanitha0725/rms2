@@ -2,6 +2,7 @@
 using Application.DTOs.Payment;
 using Domain.Common;
 using Domain.Entities;
+using Domain.Enums;
 using MediatR;
 using Serilog;
 
@@ -11,6 +12,7 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
         IPayhereService payhereService,
         ILogger logger,
         IGenericRepository<Payment, Guid> paymentRepository,
+        IGenericRepository<Reservation, int> reservationRepository,
         IUnitOfWork unitOfWork) :
         IRequestHandler<UpdatePaymentStatusCommand, Result<Guid>>
     {
@@ -22,6 +24,7 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
 
             try
             {
+                // validate the webhook signature
                 var isValid = payhereService.VerifyWebhook(new WebhookNotification(
                     request.MerchantId,
                     request.OrderId,
@@ -31,6 +34,7 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
                     request.StatusCode,
                     request.Md5Sig));
 
+                // check if the signature is valid
                 if (!isValid)
                 {
                     logger.Warning("Invalid Webhook Signature for OrderId: {OrderId}", 
@@ -42,6 +46,7 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
                 var payment = (await paymentRepository.GetAllAsync(cancellationToken))
                     .FirstOrDefault(p => p.OrderID == request.OrderId);
 
+                // check if the payment record exists
                 if (payment == null)
                 {
                     logger.Warning("Payment record not found for OrderId: {OrderId}", 
@@ -57,6 +62,7 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
                     _ => "Failed"
                 };
 
+                // update the payment record
                 payment.GatewayTransactionID = request.PaymentId;
                 if (decimal.TryParse(request.PayhereAmount, out var amountPaid))
                 {
@@ -68,6 +74,24 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
                         request.OrderId);
                     return Result<Guid>.Failure(new Error("Invalid PayhereAmount format."));
                 }
+
+                // Get the associated reservation
+                var reservation = await reservationRepository.GetByIdAsync(payment.ReservationID, cancellationToken);
+                if (reservation == null)
+                {
+                    logger.Warning("Reservation not found for ReservationID: {ReservationID}",
+                        payment.ReservationID);
+                    return Result<Guid>.Failure(new Error("Reservation not found."));
+                }
+
+                // Update the reservation status based on payment status
+                reservation.Status = payment.Status switch
+                {
+                    "Completed" => ReservationStatus.Confirmed,
+                    "Pending" => ReservationStatus.PendingPayment,
+                    "Failed" => ReservationStatus.Cancelled,
+                    _ => reservation.Status
+                };
 
                 await paymentRepository.UpdateAsync(payment, cancellationToken);
                 await unitOfWork.SaveChangesAsync(cancellationToken);

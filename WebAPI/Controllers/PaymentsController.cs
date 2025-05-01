@@ -1,6 +1,7 @@
 ﻿using Application.Abstractions.Interfaces;
 using Application.DTOs.Payment;
 using Application.Features.ManagePayments.CreatePayment;
+using Application.Features.ManagePayments.GetPaymentStatus;
 using Application.Features.ManagePayments.UpdatePaymentStatus;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -43,6 +44,23 @@ namespace WebAPI.Controllers
                 return Ok(response.Value);
             }
             return BadRequest(response.Error);
+        }
+
+        [HttpGet("status")]
+        public async Task<IActionResult> GetPaymentStatus([FromQuery] string orderId)
+        {
+            var query = new GetPaymentStatusQuery
+            {
+                OrderId = orderId
+            };
+            var result = await mediator.Send(query);
+
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
         }
     }
 }

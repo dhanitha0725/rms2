@@ -23,9 +23,11 @@ namespace Application.Features.ManagePayments.CreatePayment
 
             try
             {
-                // fetch the reservation user id for the given reservation id
-                var reservationUserDetail = await reservationUseRepository.GetByIdAsync(request.ReservationId, cancellationToken);
 
+                // Get all reservation user details and filter by the ReservationID
+                var allUserDetails = await reservationUseRepository.GetAllAsync(cancellationToken);
+                var reservationUserDetail = allUserDetails.FirstOrDefault(
+                    ud => ud.ReservationID == request.ReservationId);
                 if (reservationUserDetail == null)
                 {
                     return Result<PaymentInitiationResponse>.Failure(new Error("Reservation user detail not found."));
