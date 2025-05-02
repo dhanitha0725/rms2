@@ -74,8 +74,7 @@ public class AddFacilityCommandHandler (
         {
             await unitOfWork.RollbackTransactionAsync(cancellationToken);
             logger.Error(ex, "Error adding new facility");
-            //return Result<int>.Failure(new Error("Error adding new facility"));
-            throw;
+            return Result<int>.Failure(new Error($"Error adding new facility: {ex.Message}"));
         }
     }
 }

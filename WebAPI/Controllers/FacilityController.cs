@@ -1,6 +1,7 @@
 ﻿using Application.DTOs.FacilityDtos;
 using Application.Features.ManageFacility.AddFacility.Commands;
 using Application.Features.ManageFacility.AddFacilityType;
+using Application.Features.ManageFacility.DeleteFacility;
 using Application.Features.ManageFacility.FacilityCardDetails;
 using Application.Features.ManageFacility.GetFacilityDetails;
 using Application.Features.ManageFacility.GetFacilityNames;
@@ -145,6 +146,24 @@ namespace WebAPI.Controllers
             }
 
             return Ok(result.Value);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{facilityId}")]
+        public async Task<IActionResult> DeleteFacility([FromRoute] int facilityId)
+        {
+            var command = new DeleteFacilityCommand
+            {
+                FacilityId = facilityId
+            };
+            var result = await mediator.Send(command);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { Error = result.Error.Message });
+            }
+
+            return Ok(new { FacilityId = result.Value });
         }
     }
 }
