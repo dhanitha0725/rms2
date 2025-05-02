@@ -5,7 +5,7 @@ using Domain.Common;
 using Domain.Entities;
 using Serilog;
 
-namespace Application.Features.ManageFacility.AddFacility.Commands;
+namespace Application.Features.ManageFacility.AddFacility;
 
 public class AddFacilityCommandHandler (
     IGenericRepository<Facility, int> facilityRepository,

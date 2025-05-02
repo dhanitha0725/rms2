@@ -2,7 +2,7 @@
 using Domain.Common;
 using MediatR;
 
-namespace Application.Features.ManageFacility.AddFacility.Commands;
+namespace Application.Features.ManageFacility.AddFacility;
 
 public class AddFacilityCommand : IRequest<Result<int>>
 {

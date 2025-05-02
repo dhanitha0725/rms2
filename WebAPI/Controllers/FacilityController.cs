@@ -1,5 +1,5 @@
 ﻿using Application.DTOs.FacilityDtos;
-using Application.Features.ManageFacility.AddFacility.Commands;
+using Application.Features.ManageFacility.AddFacility;
 using Application.Features.ManageFacility.AddFacilityType;
 using Application.Features.ManageFacility.DeleteFacility;
 using Application.Features.ManageFacility.FacilityCardDetails;
