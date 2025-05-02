@@ -1,9 +1,9 @@
 ﻿using Application.DTOs.ReservationDtos;
 using Application.Features.ManageFacility.SelectedFacilityDetails;
-using Application.Features.ManagePayments.CreatePayment;
 using Application.Features.ManageReservations.CalculateTotal;
 using Application.Features.ManageReservations.CheckAvailability;
 using Application.Features.ManageReservations.CreateReservation;
+using Application.Features.ManageReservations.GetReservationTableData;
 using Application.Features.ManageReservations.UploadDocument;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -73,6 +73,18 @@ namespace WebAPI.Controllers
                 return BadRequest(result.Error);
             }
             return Ok(result);
+        }
+
+        [HttpGet("reservation-data")]
+        public async Task<IActionResult> GetReservationTableData()
+        {
+            var query = new GetReservationTableDataQuery();
+            var result = await mediator.Send(query);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.Error);
+            }
+            return Ok(result.Value);
         }
     }
 }
