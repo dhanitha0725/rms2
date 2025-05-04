@@ -2,9 +2,8 @@
 
 namespace Application.Abstractions.Interfaces
 {
-    public interface IReservationRepository
+    public interface IReservationRepository : IGenericRepository<Reservation, int>
     {
-        Task<int> GetReservedRoomsCountAsync(int facilityId, string roomType, DateTime startDate, DateTime endDate);
-        Task<bool> IsPackageReservedAsync(int packageId);
+        Task<Reservation?> GetReservationDetailsAsync(int reservationId, CancellationToken cancellationToken = default);
     }
 }

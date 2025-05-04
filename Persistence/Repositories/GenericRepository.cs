@@ -65,10 +65,15 @@ namespace Persistence.Repositories
             return Task.CompletedTask;
         }
 
-        public IQueryable<T> LockForUpdate(IQueryable<T> query)
+        public async Task<T?> GetByIdWithQueryAsync(
+            Func<IQueryable<T>, IQueryable<T>> queryBuilder,
+            CancellationToken cancellationToken = default)
         {
-            return query.TagWith("FOR UPDATE");
+            var query = queryBuilder(context.Set<T>());
+
+            return await query.FirstOrDefaultAsync(cancellationToken);
         }
+
 
         public async Task<T?> GetByIdWithIncludeAsync(
             Tid id,
