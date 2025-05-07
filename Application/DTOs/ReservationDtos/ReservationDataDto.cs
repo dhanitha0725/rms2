@@ -55,6 +55,7 @@
     {
         public string RoomType { get; set; }
         public string FacilityName { get; set; }
+        public int Quantity { get; set; }
     }
 
     // reserved packages details

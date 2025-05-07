@@ -25,7 +25,7 @@
     public class PriceBreakdownDto
     {
         public string ItemName { get; set; } = string.Empty;
-        public string PricingType { get; set; } = string.Empty; // fixed or per day
+        public string PricingType { get; set; } = string.Empty; 
         public decimal UnitPrice { get; set; }
         public int Quantity { get; set; }
         public decimal SubTotal { get; set; }

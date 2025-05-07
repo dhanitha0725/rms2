@@ -81,7 +81,7 @@ namespace Application.Features.ManageReservations.CheckAvailability
 
             //get total room of given type
             var totalRooms = (await roomRepository.GetAllAsync())
-                .Count(r => r.Type == room.Type && r.Status == "Available");
+                .Count(r => r.RoomTypeID == room.RoomTypeID && r.Status == "Available");
 
             // get total reserved rooms of given type
             var reservedRooms = (await reservedRoomRepository.GetAllAsync())

@@ -35,7 +35,7 @@ namespace Application.Features.ManageFacility.AddRooms
                     .Select(_ => new Room
                     {
                         FacilityID = request.FacilityId,
-                        Type = request.RoomConfigurationDto.RoomType,
+                        RoomTypeID = request.RoomConfigurationDto.RoomTypeId,
                         Capacity = request.RoomConfigurationDto.Capacity,
                         NumberOfBeds = request.RoomConfigurationDto.NumberOfBeds,
                         Status = request.RoomConfigurationDto.Status
@@ -52,7 +52,7 @@ namespace Application.Features.ManageFacility.AddRooms
                     //check if pricing exists
                     var existingPricing = (await roomPricingRepository.GetAllAsync(cancellationToken))
                         .FirstOrDefault(rp => rp.FacilityID == request.FacilityId &&
-                                              rp.RoomType == request.RoomConfigurationDto.RoomType &&
+                                              rp.RoomTypeID == request.RoomConfigurationDto.RoomTypeId &&
                                               rp.Sector == sector);
 
                     if (existingPricing == null)
@@ -61,7 +61,7 @@ namespace Application.Features.ManageFacility.AddRooms
                         var roomPricing = new RoomPricing
                         {
                             FacilityID = request.FacilityId,
-                            RoomType = request.RoomConfigurationDto.RoomType,
+                            RoomTypeID = request.RoomConfigurationDto.RoomTypeId,
                             Sector = sector,
                             Price = price
                         };

@@ -53,9 +53,9 @@ namespace Application.Features.ManageFacility.SelectedFacilityDetails
             var rooms = (await roomRepository.GetAllAsync(cancellationToken))
                 .Where(r => r.FacilityID == request.FacilityId)
                 .ToList();
-            var roomTypes = rooms.Select(r => r.Type).Distinct().ToList();
+            var roomTypes = rooms.Select(r => r.RoomTypeID).Distinct().ToList();
             var roomPricing = (await roomPricingRepository.GetAllAsync(cancellationToken))
-                .Where(rp => rp.FacilityID == request.FacilityId && roomTypes.Contains(rp.RoomType))
+                .Where(rp => rp.FacilityID == request.FacilityId && roomTypes.Contains(rp.RoomTypeID))
                 .GroupBy(rp => rp.RoomType)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
@@ -80,8 +80,8 @@ namespace Application.Features.ManageFacility.SelectedFacilityDetails
                 Rooms = rooms.Select(r => new RoomDetailsDto
                 {
                     RoomId = r.RoomID,
-                    RoomType = r.Type,
-                    RoomPricing = roomPricing.GetValueOrDefault(r.Type, new List<RoomPricing>())
+                    RoomType = r.RoomType.TypeName,
+                    RoomPricing = roomPricing.GetValueOrDefault(r.RoomType, new List<RoomPricing>())
                         .Select(rp => new RoomPricingDto { Sector = rp.Sector, Price = rp.Price })
                         .ToList()
                 }).ToList()

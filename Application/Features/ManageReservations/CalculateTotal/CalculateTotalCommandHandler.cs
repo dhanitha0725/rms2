@@ -185,7 +185,7 @@ namespace Application.Features.ManageReservations.CalculateTotal
                     return Result<PriceBreakdownDto>.Failure(new Error("Room not found"));
 
                 var pricing = (await roomPricingRepository.GetAllAsync(cancellationToken))
-                    .Where(rp => rp.RoomType == room.Type && rp.Sector == request.CustomerType);
+                    .Where(rp => rp.RoomTypeID == room.RoomTypeID && rp.Sector == request.CustomerType);
 
                 if (!pricing.Any())
                     return Result<PriceBreakdownDto>.Failure(new Error("No pricing available"));
@@ -195,7 +195,7 @@ namespace Application.Features.ManageReservations.CalculateTotal
 
                 return Result<PriceBreakdownDto>.Success(new PriceBreakdownDto
                 {
-                    ItemName = room.Type,
+                    ItemName = room.RoomType.TypeName,
                     PricingType = "daily",
                     UnitPrice = pricePerNight,
                     Quantity = item.Quantity,
