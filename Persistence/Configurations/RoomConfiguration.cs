@@ -17,12 +17,6 @@ namespace Persistence.Configurations
                 .HasColumnName("RoomID")
                 .ValueGeneratedOnAdd();
 
-            builder.Property(e => e.Type)
-                .HasColumnType("varchar(50)")
-                .HasColumnName("Type")
-                .HasMaxLength(50)
-                .IsRequired();
-
             builder.Property(e => e.Capacity)
                 .HasColumnType("int")
                 .HasColumnName("Capacity")
@@ -48,6 +42,12 @@ namespace Persistence.Configurations
             builder.HasMany(e => e.ReservedRooms)
                 .WithOne(e => e.Room)
                 .HasForeignKey(e => e.RoomID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // one-to-many relationship between Room and RoomType
+            builder.HasOne(e => e.RoomType)
+                .WithMany(e => e.Rooms)
+                .HasForeignKey(e => e.RoomTypeID)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
