@@ -49,9 +49,6 @@ namespace Persistence.Configurations
                 .WithOne(e => e.Room)
                 .HasForeignKey(e => e.RoomID)
                 .OnDelete(DeleteBehavior.Restrict);
-
-
-
         }
     }
 }
