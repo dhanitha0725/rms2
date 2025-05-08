@@ -14,6 +14,9 @@ namespace Application.Features.ManageFacility.AddRooms
             RuleFor(x => x.RoomConfigurationDto.Capacity)
                 .GreaterThan(0).WithMessage("Capacity must be positive");
 
+            RuleFor(x => x.RoomConfigurationDto.Quantity)
+                .GreaterThan(0).WithMessage("Quantity must be positive");
+
             RuleFor(x => x.RoomConfigurationDto.Status)
                 .Must(BeValidStatus).WithMessage("Invalid status");
         }

@@ -18,7 +18,7 @@ namespace Persistence
 
             services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
             services.AddScoped<IReservationRepository, ReservationRepository>();
-            //services.AddScoped<IRoomRepository, RoomRepository>();
+            services.AddScoped<IRoomRepository, RoomRepository>();
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
