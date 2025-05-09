@@ -3,6 +3,7 @@ using Application.DTOs.ReservationDtos;
 using Domain.Common;
 using Domain.Entities;
 using MediatR;
+using Serilog;
 
 namespace Application.Features.ManageReservations.CalculateTotal
 {
@@ -10,7 +11,8 @@ namespace Application.Features.ManageReservations.CalculateTotal
             IGenericRepository<Package, int> packageRepository,
             IGenericRepository<Room, int> roomRepository,
             IGenericRepository<Pricing, int> pricingRepository,
-            IGenericRepository<RoomPricing, int> roomPricingRepository)
+            IRoomRepository roomTypeRepository,
+            ILogger logger)
             : IRequestHandler<CalculateTotalCommand, Result<CalculateTotalResponseDto>>
     {
         public async Task<Result<CalculateTotalResponseDto>> Handle(
@@ -180,18 +182,27 @@ namespace Application.Features.ManageReservations.CalculateTotal
         {
             try
             {
+                // get room details
                 var room = await roomRepository.GetByIdAsync(item.ItemId, cancellationToken);
                 if (room == null)
                     return Result<PriceBreakdownDto>.Failure(new Error("Room not found"));
 
-                var pricing = (await roomPricingRepository.GetAllAsync(cancellationToken))
-                    .Where(rp => rp.RoomTypeID == room.RoomTypeID && rp.Sector == request.CustomerType);
+                // get room pricing with room type included
+                var roomPricingList = await roomTypeRepository.GetRoomPricingWithRoomTypeAsync(
+                    request.FacilityId, new List<int> { room.RoomTypeID }, cancellationToken);
 
-                if (!pricing.Any())
+                // filter pricing based on customer type
+                var matchingPricing = roomPricingList
+                    .Where(rp => rp.RoomTypeID == room.RoomTypeID && rp.Sector == request.CustomerType)
+                    .ToList();
+
+                // check if any pricing is available
+                if (!matchingPricing.Any())
                     return Result<PriceBreakdownDto>.Failure(new Error("No pricing available"));
 
                 var duration = (request.EndDate.Value - request.StartDate.Value).Days;
-                var pricePerNight = pricing.First().Price;
+                var pricePerNight = matchingPricing.First().Price;
+                var roomTypeName = matchingPricing.First().RoomType.TypeName;
 
                 return Result<PriceBreakdownDto>.Success(new PriceBreakdownDto
                 {
@@ -204,6 +215,7 @@ namespace Application.Features.ManageReservations.CalculateTotal
             }
             catch (Exception ex)
             {
+                logger.Error(ex.Message);
                 return Result<PriceBreakdownDto>.Failure(new Error(ex.Message));
             }
         }
