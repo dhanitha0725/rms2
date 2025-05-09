@@ -53,6 +53,23 @@ namespace Persistence.Repositories
             throw new NotImplementedException();
         }
 
+        public IQueryable<Room> GetQuery()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> AnyAsync(Expression<Func<Room, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<int> CountAsync(Expression<Func<Room, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        // This method retrieves room pricing information for a
+        // specific facility and a list of room type IDs.
         public async Task<List<RoomPricing>> GetRoomPricingWithRoomTypeAsync(
             int facilityId, List<int> roomTypeIds, 
             CancellationToken cancellationToken)

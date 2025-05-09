@@ -74,6 +74,20 @@ namespace Persistence.Repositories
             return await query.FirstOrDefaultAsync(cancellationToken);
         }
 
+        public async Task<bool> AnyAsync(
+            Expression<Func<T, bool>> predicate, 
+            CancellationToken cancellationToken = default)
+        {
+            return await context.Set<T>().AnyAsync(predicate, cancellationToken);
+        }
+
+        public async Task<int> CountAsync(
+            Expression<Func<T, bool>> predicate,
+            CancellationToken cancellationToken = default)
+        {
+            return await context.Set<T>().CountAsync(predicate, cancellationToken);
+        }
+
 
         public async Task<T?> GetByIdWithIncludeAsync(
             Tid id,
