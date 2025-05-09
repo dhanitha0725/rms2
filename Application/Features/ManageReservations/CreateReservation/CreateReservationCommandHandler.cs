@@ -15,6 +15,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                 IGenericRepository<ReservationUserDetail, int> reservationUserRepository,
                 IGenericRepository<ReservedPackage, int> reservedPackageRepository,
                 IGenericRepository<ReservedRoom, int> reservedRoomRepository,
+                IGenericRepository<Room, int> roomRepository,
                 IBackgroundTaskQueue backgroundTaskQueue,
                 IServiceScopeFactory serviceScopeFactory,
                 IUnitOfWork unitOfWork,
@@ -76,18 +77,43 @@ namespace Application.Features.ManageReservations.CreateReservation
                     }
                     else
                     {
-                        var reservedRoom = new ReservedRoom
+                        // Fetch available rooms for the given RoomTypeID and FacilityID
+                        var availableRooms = await roomRepository.GetAllAsync(cancellationToken);
+                        // Filter rooms based on the request
+                        var matchingRooms = availableRooms
+                            .Where(r => r.RoomTypeID == item.ItemId &&
+                                        r.FacilityID == request.FacilityId &&
+                                        r.Status == "Available")
+                            .Take(item.Quantity)
+                            .ToList();
+
+                        if (matchingRooms.Count < item.Quantity)
                         {
-                            ReservationID = reservation.ReservationID,
-                            RoomID = item.ItemId,
-                            StartDate = request.StartDate,
-                            EndDate = request.EndDate,
-                        };
+                            logger.Warning("Insufficient available rooms of type {RoomTypeID} in facility {FacilityID}.",
+                                item.ItemId, request.FacilityId);
+                            return Result<ReservationResultDto>.Failure(new Error("Insufficient available rooms."));
+                        }
 
-                        await reservedRoomRepository.AddAsync(reservedRoom, cancellationToken);
+                        // Allocate the rooms
+                        foreach (var room in matchingRooms)
+                        {
+                            var reservedRoom = new ReservedRoom
+                            {
+                                ReservationID = reservation.ReservationID,
+                                RoomID = room.RoomID,
+                                StartDate = request.StartDate,
+                                EndDate = request.EndDate,
+                            };
 
-                        logger.Information("Reserved room with ID {RoomID} for reservation {ReservationID}.",
-                            item.ItemId, reservation.ReservationID);
+                            await reservedRoomRepository.AddAsync(reservedRoom, cancellationToken);
+
+                            // Update room status to "Reserved"
+                            room.Status = "Reserved";
+                            await roomRepository.UpdateAsync(room, cancellationToken);
+
+                            logger.Information("Reserved room with ID {RoomID} for reservation {ReservationID}.",
+                                room.RoomID, reservation.ReservationID);
+                        }
                     }
                 }
 
@@ -96,7 +122,7 @@ namespace Application.Features.ManageReservations.CreateReservation
 
                 if (reservation.Status == ReservationStatus.PendingPayment)
                 {
-                    // scheduled task: change status to expired after 30 minutes
+                    // scheduled task: change status to expired after 30 minutes (for pending payments)
                     ScheduleReservationExpiration(reservation.ReservationID);
                 }
 
@@ -122,7 +148,7 @@ namespace Application.Features.ManageReservations.CreateReservation
             backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
             {
                 // Wait for 30 minutes
-                await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
+                await Task.Delay(TimeSpan.FromMinutes(30), cancellationToken);
 
                 // Create the expiration task
                 var expireTask = new ExpireReservationTask(
