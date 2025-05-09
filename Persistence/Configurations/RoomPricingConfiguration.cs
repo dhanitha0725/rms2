@@ -28,16 +28,16 @@ namespace Persistence.Configurations
                 .IsRequired()
                 .HasMaxLength(30);
 
-            builder.Property(rp => rp.RoomType)
-                .HasColumnType("varchar(30)")
-                .HasColumnName("RoomType")
-                .IsRequired()
-                .HasMaxLength(30);
-
             // one-to-many relationship between Facility and RoomPricing
             builder.HasOne(rp => rp.Facility)
                 .WithMany(f => f.RoomPricings)
                 .HasForeignKey(rp => rp.FacilityID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // one-to-many relationship between RoomType and RoomPricing
+            builder.HasOne(rp => rp.RoomType)
+                .WithMany(rt => rt.RoomPricings)
+                .HasForeignKey(rp => rp.RoomTypeID)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

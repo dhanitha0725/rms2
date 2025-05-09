@@ -81,9 +81,24 @@ namespace Application.Features.ManageReservations.CheckAvailability
 
             //get total room of given type
             var totalRooms = (await roomRepository.GetAllAsync())
-                .Count(r => r.Type == room.Type && r.Status == "Available");
+                .Count(r => r.RoomTypeID == room.RoomTypeID && r.Status == "Available");
 
-            // get total reserved rooms of given type
+            // get total reserved rooms of given type (exception occured)
+            /*
+             *This error happens because the r.Reservation property in the LINQ query is null, and the code is attempting to access its StartDate and EndDate properties, causing a NullReferenceException.
+               This might be happening because:
+               1.	Some ReservedRoom entities in the database have a null value for their Reservation navigation property. This could be due to incomplete data or a missing relationship in the database.
+               2.	The reservedRoomRepository.GetAllAsync() method might not be including the Reservation property when fetching the data. If lazy loading is disabled or not configured, the Reservation property will remain null unless explicitly loaded.
+               3.	There could be a mismatch in how the ReservedRoom and Reservation entities are related in the database or the ORM configuration (e.g., missing Include in the query).
+               To fix this issue:
+               •	Add a null check in the LINQ query:
+                 .Count(r => r.RoomID == item.ItemId &&
+                           r.Reservation != null &&
+                           r.Reservation.StartDate < request.EndDate &&
+                           r.Reservation.EndDate > request.StartDate);
+               
+             */
+
             var reservedRooms = (await reservedRoomRepository.GetAllAsync())
                 .Count(r => r.RoomID == item.ItemId &&
                             r.Reservation.StartDate < request.EndDate &&

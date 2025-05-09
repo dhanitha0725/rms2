@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Persistence.DbContexts;
@@ -11,9 +12,11 @@ using Persistence.DbContexts;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(ReservationDbContext))]
-    partial class ReservationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250507143524_AddRoomTypeTable")]
+    partial class AddRoomTypeTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -498,20 +501,21 @@ namespace Persistence.Migrations
                         .HasColumnType("int")
                         .HasColumnName("NumberOfBeds");
 
-                    b.Property<int>("RoomTypeID")
-                        .HasColumnType("int");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)")
                         .HasColumnName("Status");
 
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("Type");
+
                     b.HasKey("RoomID");
 
                     b.HasIndex("FacilityID");
-
-                    b.HasIndex("RoomTypeID");
 
                     b.ToTable("Rooms", (string)null);
                 });
@@ -532,8 +536,11 @@ namespace Persistence.Migrations
                         .HasColumnType("decimal(10,2)")
                         .HasColumnName("Price");
 
-                    b.Property<int>("RoomTypeID")
-                        .HasColumnType("int");
+                    b.Property<string>("RoomType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("RoomType");
 
                     b.Property<string>("Sector")
                         .IsRequired()
@@ -544,8 +551,6 @@ namespace Persistence.Migrations
                     b.HasKey("RoomPricingID");
 
                     b.HasIndex("FacilityID");
-
-                    b.HasIndex("RoomTypeID");
 
                     b.ToTable("RoomPricing", (string)null);
                 });
@@ -561,7 +566,9 @@ namespace Persistence.Migrations
 
                     b.Property<string>("TypeName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("TypeName");
 
                     b.HasKey("RoomTypeID");
 
@@ -786,15 +793,7 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.RoomType", "RoomType")
-                        .WithMany("Rooms")
-                        .HasForeignKey("RoomTypeID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Facility");
-
-                    b.Navigation("RoomType");
                 });
 
             modelBuilder.Entity("Domain.Entities.RoomPricing", b =>
@@ -805,15 +804,7 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.RoomType", "RoomType")
-                        .WithMany("RoomPricings")
-                        .HasForeignKey("RoomTypeID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Facility");
-
-                    b.Navigation("RoomType");
                 });
 
             modelBuilder.Entity("Domain.Entities.Facility", b =>
@@ -877,13 +868,6 @@ namespace Persistence.Migrations
             modelBuilder.Entity("Domain.Entities.Room", b =>
                 {
                     b.Navigation("ReservedRooms");
-                });
-
-            modelBuilder.Entity("Domain.Entities.RoomType", b =>
-                {
-                    b.Navigation("RoomPricings");
-
-                    b.Navigation("Rooms");
                 });
 #pragma warning restore 612, 618
         }

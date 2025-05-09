@@ -1,8 +1,9 @@
-﻿namespace Application.Abstractions.Interfaces
+﻿using Domain.Entities;
+
+namespace Application.Abstractions.Interfaces
 {
-    public interface IRoomRepository
+    public interface IRoomRepository : IGenericRepository<Room, int>
     {
-        Task<int> GetRoomCountByTypeAsync(int facilityId, string roomType);
-        Task<int> ReserveRoomsAsync(string roomType, int facilityId, DateTime startDate, DateTime endDate, int quantity);
+        Task<List<RoomPricing>> GetRoomPricingWithRoomTypeAsync(int facilityId, List<int> roomTypeIds, CancellationToken cancellationToken);
     }
 }

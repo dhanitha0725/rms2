@@ -1,9 +1,10 @@
 ﻿using Application.DTOs.ReservationDtos;
 using Application.Features.ManageFacility.SelectedFacilityDetails;
-using Application.Features.ManagePayments.CreatePayment;
 using Application.Features.ManageReservations.CalculateTotal;
 using Application.Features.ManageReservations.CheckAvailability;
 using Application.Features.ManageReservations.CreateReservation;
+using Application.Features.ManageReservations.GetReservationDetails;
+using Application.Features.ManageReservations.GetReservationTableData;
 using Application.Features.ManageReservations.UploadDocument;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +29,7 @@ namespace WebAPI.Controllers
             return Ok(result.Value);
         }
 
+        // Get selected facility details by ID (client side)
         [HttpGet("{id}")]
         public async Task<IActionResult> GetSelectedFacilityDetails(int id)
         {
@@ -64,6 +66,7 @@ namespace WebAPI.Controllers
             return Ok(result);
         }
 
+        // Upload documents (reservation + payment)
         [HttpPost("uploadDocument")]
         public async Task<IActionResult> UploadDocument([FromForm] UploadDocumentsCommand command)
         {
@@ -73,6 +76,32 @@ namespace WebAPI.Controllers
                 return BadRequest(result.Error);
             }
             return Ok(result);
+        }
+
+        // Get reservation table data
+        [HttpGet("reservation-data")]
+        public async Task<IActionResult> GetReservationTableData()
+        {
+            var query = new GetReservationTableDataQuery();
+            var result = await mediator.Send(query);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.Error);
+            }
+            return Ok(result.Value);
+        }
+
+        // Get full reservation details by ID
+        [HttpGet("reservation-details/{id}")]
+        public async Task<IActionResult> GetReservationDetails(int id)
+        {
+            var query = new GetReservationDetailsQuery { ReservationId = id };
+            var result = await mediator.Send(query);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.Error);
+            }
+            return Ok(result.Value);
         }
     }
 }
