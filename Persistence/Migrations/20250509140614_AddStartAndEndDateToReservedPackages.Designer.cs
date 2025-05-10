@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Persistence.DbContexts;
@@ -11,9 +12,11 @@ using Persistence.DbContexts;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(ReservationDbContext))]
-    partial class ReservationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250509140614_AddStartAndEndDateToReservedPackages")]
+    partial class AddStartAndEndDateToReservedPackages
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -253,7 +256,7 @@ namespace Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("PaymentID");
 
-                    b.Property<decimal?>("AmountPaid")
+                    b.Property<decimal>("AmountPaid")
                         .HasColumnType("decimal(12,2)")
                         .HasColumnName("AmountPaid");
 
@@ -275,6 +278,7 @@ namespace Persistence.Migrations
                         .HasColumnName("Method");
 
                     b.Property<string>("OrderID")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("ReservationID")

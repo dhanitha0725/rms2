@@ -12,7 +12,8 @@ namespace Application.Abstractions.Interfaces
         Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken);
         Task<T?> AddRangeAsync (IEnumerable<T> entities, CancellationToken cancellationToken = default);
         Task<T?> GetByIdWithIncludeAsync(Tid id, params Expression<Func<T, object>>[] includes);
-        Task<T?> GetByIdWithQueryAsync(Func<IQueryable<T>, IQueryable<T>> queryBuilder, CancellationToken cancellationToken = default);
+        Task<bool> AnyAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default);
+        Task<int> CountAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default);
     }
 }
     

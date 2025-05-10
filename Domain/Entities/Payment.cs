@@ -3,7 +3,7 @@
     public class Payment
     {
         public Guid PaymentID { get; set; }
-        public string OrderID { get; set; }
+        public string? OrderID { get; set; }
         public string Method { get; set; }
         public decimal? AmountPaid { get; set; }
         public string Currency { get; set; }

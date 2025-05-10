@@ -20,6 +20,16 @@ namespace Persistence.Configurations
             builder.Property(rp => rp.status)
                 .HasMaxLength(50);
 
+            builder.Property(rp => rp.StartDate)
+                .HasColumnType("timestamp with time zone")
+                .HasColumnName("StartDate")
+                .IsRequired();
+
+            builder.Property(rp => rp.EndDate)
+                .HasColumnType("timestamp with time zone")
+                .HasColumnName("EndDate")
+                .IsRequired();
+
             // one-to-many relationship between ReservedPackage and Package
             builder.HasOne(rp => rp.Package)
                 .WithMany(p => p.ReservedPackages)

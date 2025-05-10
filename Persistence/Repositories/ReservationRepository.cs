@@ -53,6 +53,21 @@ namespace Persistence.Repositories
             throw new NotImplementedException();
         }
 
+        public IQueryable<Reservation> GetQuery()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> AnyAsync(Expression<Func<Reservation, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<int> CountAsync(Expression<Func<Reservation, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<Reservation?> GetReservationDetailsAsync(int reservationId, CancellationToken cancellationToken = default)
         {
             return await context.Reservations

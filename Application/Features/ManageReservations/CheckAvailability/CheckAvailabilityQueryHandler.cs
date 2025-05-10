@@ -8,16 +8,16 @@ using Serilog;
 namespace Application.Features.ManageReservations.CheckAvailability
 {
     public class CheckAvailabilityQueryHandler(
-        IGenericRepository<ReservedRoom, int> reservedRoomRepository,
-        IGenericRepository<ReservedPackage, int> reservedPackageRepository,
-        IGenericRepository<Room, int> roomRepository,
-        IGenericRepository<Package, int> packageRepository,
-        ILogger logger)
-        : IRequestHandler<CheckAvailabilityQuery, Result<AvailabilityResponseDto>>
+            IGenericRepository<ReservedRoom, int> reservedRoomRepository,
+            IGenericRepository<ReservedPackage, int> reservedPackageRepository,
+            IGenericRepository<Room, int> roomRepository,
+            IGenericRepository<Package, int> packageRepository,
+            ILogger logger)
+            : IRequestHandler<CheckAvailabilityQuery, Result<AvailabilityResponseDto>>
     {
         public async Task<Result<AvailabilityResponseDto>> Handle(
             CheckAvailabilityQuery request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken) 
         {
             var isAvailable = true;
             var requestDateRange = request.CheckAvailabilityDto;
@@ -26,13 +26,17 @@ namespace Application.Features.ManageReservations.CheckAvailability
             {
                 if (item.Type == "package")
                 {
-                    var result = await CheckPackageAvailability(item, requestDateRange);
+                    var result = await CheckPackageAvailability(item, requestDateRange, cancellationToken); 
                     if (!result) isAvailable = false;
                 }
                 else if (item.Type == "room")
                 {
-                    var result = await CheckRoomAvailability(item, requestDateRange);
+                    var result = await CheckRoomAvailability(item, requestDateRange, cancellationToken); 
                     if (!result) isAvailable = false;
+                }
+                else
+                {
+                    logger.Warning("Unknown item type: {ItemType}", item.Type);
                 }
             }
 
@@ -49,63 +53,59 @@ namespace Application.Features.ManageReservations.CheckAvailability
 
         private async Task<bool> CheckPackageAvailability(
             AvailableItemDto item,
-            CheckAvailabilityDto request)
+            CheckAvailabilityDto request,
+            CancellationToken cancellationToken) 
         {
-            //get package details
-            var package = await packageRepository.GetByIdAsync(item.ItemId);
+            var packageId = item.ItemId;
+
+            var package = await packageRepository.GetByIdAsync(packageId, cancellationToken); 
             if (package == null)
             {
+                logger.Warning("Package with ID {PackageId} not found.", packageId);
                 return false;
             }
 
-            //check existing reservations
-            var existingReservations = (await reservedPackageRepository.GetAllAsync())
-                .Count(rp => rp.PackageID == item.ItemId && 
-                             rp.Reservation != null && 
-                             rp.Reservation.StartDate < request.EndDate && 
-                             rp.Reservation.EndDate > request.StartDate);
-
-            return existingReservations == 0;
+            var hasOverlap = await reservedPackageRepository.AnyAsync(
+                rp => rp.PackageID == packageId &&
+                      rp.StartDate < request.EndDate &&
+                      rp.EndDate > request.StartDate,
+                cancellationToken);
+            if (!hasOverlap) return !hasOverlap;
+            logger.Warning("Package with ID {PackageId} has overlapping reservations.", packageId);
+            return false;
         }
 
         private async Task<bool> CheckRoomAvailability(
             AvailableItemDto item,
-            CheckAvailabilityDto request)
+            CheckAvailabilityDto request,
+            CancellationToken cancellationToken) 
         {
-            //get room details
-            var room = await roomRepository.GetByIdAsync(item.ItemId);
-            if (room == null)
+            var roomTypeId = item.ItemId;
+            var facilityId = request.FacilityId;
+            // get total of available rooms
+            var totalRooms = await roomRepository.CountAsync(
+                r => r.RoomTypeID == roomTypeId &&
+                     r.FacilityID == facilityId &&
+                     r.Status == "Available",
+                cancellationToken);
+
+            if (totalRooms < item.Quantity)
             {
+                logger.Warning("Insufficient rooms of type {RoomTypeId} in facility {FacilityId}.",
+                    roomTypeId, facilityId);
                 return false;
             }
 
-            //get total room of given type
-            var totalRooms = (await roomRepository.GetAllAsync())
-                .Count(r => r.RoomTypeID == room.RoomTypeID && r.Status == "Available");
+            // get total of reserved rooms
+            var reservedRoomsCount = await reservedRoomRepository.CountAsync(
+                rr => rr.Room.RoomTypeID == roomTypeId &&
+                      rr.Room.FacilityID == facilityId &&
+                      rr.StartDate < request.EndDate &&
+                      rr.EndDate > request.StartDate,
+                cancellationToken);
 
-            // get total reserved rooms of given type (exception occured)
-            /*
-             *This error happens because the r.Reservation property in the LINQ query is null, and the code is attempting to access its StartDate and EndDate properties, causing a NullReferenceException.
-               This might be happening because:
-               1.	Some ReservedRoom entities in the database have a null value for their Reservation navigation property. This could be due to incomplete data or a missing relationship in the database.
-               2.	The reservedRoomRepository.GetAllAsync() method might not be including the Reservation property when fetching the data. If lazy loading is disabled or not configured, the Reservation property will remain null unless explicitly loaded.
-               3.	There could be a mismatch in how the ReservedRoom and Reservation entities are related in the database or the ORM configuration (e.g., missing Include in the query).
-               To fix this issue:
-               •	Add a null check in the LINQ query:
-                 .Count(r => r.RoomID == item.ItemId &&
-                           r.Reservation != null &&
-                           r.Reservation.StartDate < request.EndDate &&
-                           r.Reservation.EndDate > request.StartDate);
-               
-             */
-
-            var reservedRooms = (await reservedRoomRepository.GetAllAsync())
-                .Count(r => r.RoomID == item.ItemId &&
-                            r.Reservation.StartDate < request.EndDate &&
-                            r.Reservation.EndDate > request.StartDate);
-
-            var available = totalRooms - reservedRooms;
-            return available >= item.Quantity;
+            var availableRooms = totalRooms - reservedRoomsCount;
+            return availableRooms >= item.Quantity;
         }
     }
 }
