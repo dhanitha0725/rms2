@@ -72,6 +72,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                 };
 
                 await reservationUserRepository.AddAsync(reservationUserDetails, cancellationToken);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
 
                 // Create reserved items
                 foreach (var item in request.Items)
