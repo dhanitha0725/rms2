@@ -149,9 +149,16 @@ namespace Application.Features.ManageReservations.CreateReservation
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
 
+                // expire for late online payments
                 if (reservation.Status == ReservationStatus.PendingPayment)
                 {
                     ScheduleReservationExpiration(reservation.ReservationID);
+                }
+
+                // cancel for late cash payments
+                if (reservation.Status == ReservationStatus.PendingCashPayment)
+                {
+                    ScheduleReservationExpirationForCashPayments(reservation.ReservationID);
                 }
 
                 return Result<ReservationResultDto>.Success(new ReservationResultDto
@@ -189,6 +196,48 @@ namespace Application.Features.ManageReservations.CreateReservation
             });
 
             logger.Information("Scheduled expiration for reservation {ReservationId} in 30 minutes.", reservationId);
+        }
+
+        private void ScheduleReservationExpirationForCashPayments(int reservationId)
+        {
+            // Queue the expiration task to run after 2 days
+            backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
+            {
+                // Wait for 2 days
+                await Task.Delay(TimeSpan.FromDays(2), cancellationToken);
+
+                // Use a new scope to resolve services
+                using var scope = serviceScopeFactory.CreateScope();
+                var reservationRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<Reservation, int>>();
+                var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+
+                try
+                {
+                    // Retrieve the reservation
+                    var reservation = await reservationRepository.GetByIdAsync(reservationId, cancellationToken);
+                    if (reservation == null)
+                    {
+                        logger.Warning("Reservation with ID {ReservationId} not found for cancellation.", reservationId);
+                        return;
+                    }
+
+                    // Update the reservation status
+                    reservation.Status = ReservationStatus.Cancelled;
+
+                    // Save the changes
+                    await reservationRepository.UpdateAsync(reservation, cancellationToken);
+                    await unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    logger.Information("Reservation with ID {ReservationId} has been cancelled.", reservationId);
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, "Error cancelling reservation with ID {ReservationId}.", reservationId);
+                }
+            });
+
+            logger.Information("Scheduled cancellation for reservation {ReservationId} in 2 days.", reservationId);
         }
     }
 }
