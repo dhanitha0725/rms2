@@ -165,5 +165,13 @@ namespace WebAPI.Controllers
 
             return Ok(new { FacilityId = result.Value });
         }
+
+        [HttpGet("facility-names")]
+        public async Task<IActionResult> GetFacilityNames()
+        {
+            var query = new GetFacilityNamesQuery();
+            var result = await mediator.Send(query);
+            return Ok(result);
+        }
     }
 }
