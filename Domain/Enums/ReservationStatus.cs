@@ -4,6 +4,8 @@
     {
         PendingApproval,
         PendingPayment,
+        PendingCashPayment,
+        PendingPaymentVerification,
         Approved,
         Completed,
         Cancelled,

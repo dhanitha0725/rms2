@@ -26,8 +26,7 @@ namespace Persistence.Configurations
 
             builder.Property(p => p.AmountPaid)
                 .HasColumnName("AmountPaid")
-                .HasColumnType("decimal(12,2)")
-                .IsRequired();
+                .HasColumnType("decimal(12,2)");
 
             builder.Property(p => p.CreatedDate)
                 .HasColumnName("CreatedDate")

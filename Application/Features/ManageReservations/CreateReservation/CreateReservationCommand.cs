@@ -11,6 +11,7 @@ public class CreateReservationCommand : IRequest<Result<ReservationResultDto>>
     public DateTime EndDate { get; set; }
     public decimal Total { get; set; }
     public string CustomerType { get; set; }
+    public string PaymentMethod { get; set; }
     public List<BookingItemDto> Items { get; set; }
     public ReservationUserInfoDto UserDetails { get; set; }
 }

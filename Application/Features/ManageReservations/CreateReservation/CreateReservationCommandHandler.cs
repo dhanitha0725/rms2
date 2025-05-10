@@ -16,6 +16,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                 IGenericRepository<ReservedPackage, int> reservedPackageRepository,
                 IGenericRepository<ReservedRoom, int> reservedRoomRepository,
                 IGenericRepository<Room, int> roomRepository,
+                IGenericRepository<Payment,int> paymentRepository,
                 IBackgroundTaskQueue backgroundTaskQueue,
                 IServiceScopeFactory serviceScopeFactory,
                 IUnitOfWork unitOfWork,
@@ -29,6 +30,22 @@ namespace Application.Features.ManageReservations.CreateReservation
             await unitOfWork.BeginTransactionAsync(cancellationToken);
             try
             {
+                // Determine reservation status based on customer type and payment method
+                ReservationStatus status;
+                if (string.Equals(request.CustomerType, "private", StringComparison.OrdinalIgnoreCase))
+                {
+                    status = request.PaymentMethod switch
+                    {
+                        nameof(PaymentMethods.Bank) => ReservationStatus.PendingPaymentVerification,
+                        nameof(PaymentMethods.Cash) => ReservationStatus.PendingCashPayment,
+                        _ => throw new ArgumentException("Invalid payment method")
+                    };
+                }
+                else
+                {
+                    status = ReservationStatus.PendingApproval;
+                }
+
                 // Create reservation
                 var reservation = new Reservation
                 {
@@ -36,9 +53,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                     EndDate = request.EndDate,
                     UserType = request.CustomerType,
                     Total = request.Total,
-                    Status = string.Equals(request.CustomerType, "private", StringComparison.OrdinalIgnoreCase)
-                        ? ReservationStatus.PendingPayment
-                        : ReservationStatus.PendingApproval,
+                    Status = status,
                     CreatedDate = DateTime.UtcNow,
                 };
 
@@ -77,9 +92,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                     }
                     else
                     {
-                        // Fetch available rooms for the given RoomTypeID and FacilityID
                         var availableRooms = await roomRepository.GetAllAsync(cancellationToken);
-                        // Filter rooms based on the request
                         var matchingRooms = availableRooms
                             .Where(r => r.RoomTypeID == item.ItemId &&
                                         r.FacilityID == request.FacilityId &&
@@ -94,7 +107,6 @@ namespace Application.Features.ManageReservations.CreateReservation
                             return Result<ReservationResultDto>.Failure(new Error("Insufficient available rooms."));
                         }
 
-                        // Allocate the rooms
                         foreach (var room in matchingRooms)
                         {
                             var reservedRoom = new ReservedRoom
@@ -107,7 +119,6 @@ namespace Application.Features.ManageReservations.CreateReservation
 
                             await reservedRoomRepository.AddAsync(reservedRoom, cancellationToken);
 
-                            // Update room status to "Reserved"
                             room.Status = "Reserved";
                             await roomRepository.UpdateAsync(room, cancellationToken);
 
@@ -117,12 +128,28 @@ namespace Application.Features.ManageReservations.CreateReservation
                     }
                 }
 
+                // Create payment record for non-online payments
+                if (request.PaymentMethod is nameof(PaymentMethods.Bank) or nameof(PaymentMethods.Cash))
+                {
+                    var payment = new Payment
+                    {
+                        Method = request.PaymentMethod.ToString(),
+                        AmountPaid = null,
+                        Currency = "LKR",
+                        CreatedDate = DateTime.UtcNow,
+                        Status = "Pending",
+                        ReservationID = reservation.ReservationID,
+                        ReservationUserID = reservationUserDetails.ReservationUserDetailID,
+                    };
+
+                    await paymentRepository.AddAsync(payment, cancellationToken);
+                }
+
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 if (reservation.Status == ReservationStatus.PendingPayment)
                 {
-                    // scheduled task: change status to expired after 30 minutes (for pending payments)
                     ScheduleReservationExpiration(reservation.ReservationID);
                 }
 
