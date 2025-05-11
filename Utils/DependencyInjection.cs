@@ -1,4 +1,5 @@
 ﻿using Application.Abstractions.Interfaces;
+using Application.EventHandlers;
 using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,10 @@ namespace Utilities
 
             services.AddHostedService<QueuedHostedService>();
             services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+
+            //register background services
+            services.AddTransient<ReservationCompletionTask>();
+            services.AddHostedService<ReservationCompletionScheduler>();
 
             // register blob services
             var blobConnection = configuration.GetConnectionString("AzureBlobStorageConnectionString");

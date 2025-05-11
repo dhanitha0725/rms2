@@ -50,6 +50,13 @@ namespace Persistence.Repositories
             return await context.Set<T>().ToListAsync(cancellationToken);
         }
 
+        public async Task<IEnumerable<T>> GetAllAsync(
+            Expression<Func<T, bool>> predicate, 
+            CancellationToken cancellationToken = default)
+        {
+            return await context.Set<T>().Where(predicate).ToListAsync(cancellationToken);
+        }
+
         public async Task<T?> GetByIdAsync(
             Tid id,
             CancellationToken cancellationToken = default)

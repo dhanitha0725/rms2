@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Application.Abstractions.Interfaces;
+﻿using Application.Abstractions.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,7 +19,12 @@ namespace Application.EventHandlers
                 using var scope = serviceScopeFactory.CreateScope();
                 var reservationRepository = scope.ServiceProvider
                     .GetRequiredService<IGenericRepository<Reservation, int>>();
-                var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                var roomRepository = scope.ServiceProvider
+                    .GetRequiredService<IGenericRepository<Room, int>>();
+                var reservedPackageRepository = scope.ServiceProvider
+                    .GetRequiredService<IGenericRepository<ReservedPackage, int>>();
+                var unitOfWork = scope.ServiceProvider
+                    .GetRequiredService<IUnitOfWork>();
 
                 // Fetch the reservation by ID
                 var reservation = await reservationRepository.GetByIdAsync(reservationId, cancellationToken);
@@ -46,6 +46,18 @@ namespace Application.EventHandlers
                         reservation.UpdatedDate = DateTime.UtcNow;
 
                         await reservationRepository.UpdateAsync(reservation, cancellationToken);
+
+                        // Release rooms
+                        var reservedRooms = await roomRepository.GetAllAsync(
+                            room => room.ReservedRooms.Any(rr => rr.ReservationID == reservationId),
+                            cancellationToken);
+
+                        foreach (var room in reservedRooms)
+                        {
+                            room.Status = "Available";
+                            await roomRepository.UpdateAsync(room, cancellationToken);
+                        }
+
                         await unitOfWork.SaveChangesAsync(cancellationToken);
                         await unitOfWork.CommitTransactionAsync(cancellationToken);
 
@@ -66,7 +78,8 @@ namespace Application.EventHandlers
             }
             catch (Exception ex)
             {
-                logger.Error(ex, "Error processing reservation expiration for {ReservationId}", reservationId);
+                logger.Error(ex, "Error processing reservation expiration for {ReservationId}",
+                    reservationId);
                 throw;
             }
         }

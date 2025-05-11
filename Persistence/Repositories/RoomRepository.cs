@@ -13,6 +13,11 @@ namespace Persistence.Repositories
             throw new NotImplementedException();
         }
 
+        public Task<IEnumerable<Room>> GetAllAsync(Expression<Func<Room, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task<Room?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();

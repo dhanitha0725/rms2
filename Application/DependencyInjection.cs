@@ -1,4 +1,6 @@
-﻿using Application.Behaviors;
+﻿using Application.Abstractions.Interfaces;
+using Application.Behaviors;
+using Application.EventHandlers;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +27,6 @@ namespace Application
             // register pipeline behaviors
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationPipelineBehaviour<,>));
             services.AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingPipelineBehavior<,>));
-
 
             return services;
         }

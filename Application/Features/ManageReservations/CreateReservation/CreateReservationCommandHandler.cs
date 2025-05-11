@@ -36,7 +36,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                 {
                     if (request is { PaymentMethod: nameof(PaymentMethods.Cash), IsPaymentReceived: true })
                     {
-                        status = ReservationStatus.Completed;
+                        status = ReservationStatus.Confirmed;
                     }
                     else
                     {
@@ -215,7 +215,7 @@ namespace Application.Features.ManageReservations.CreateReservation
             backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
             {
                 // Wait for 2 days
-                await Task.Delay(TimeSpan.FromDays(2), cancellationToken);
+                await Task.Delay(TimeSpan.FromDays(1), cancellationToken);
 
                 // Use a new scope to resolve services
                 using var scope = serviceScopeFactory.CreateScope();
