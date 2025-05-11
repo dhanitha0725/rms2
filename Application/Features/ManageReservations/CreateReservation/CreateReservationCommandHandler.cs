@@ -34,12 +34,19 @@ namespace Application.Features.ManageReservations.CreateReservation
                 ReservationStatus status;
                 if (string.Equals(request.CustomerType, "private", StringComparison.OrdinalIgnoreCase))
                 {
-                    status = request.PaymentMethod switch
+                    if (request is { PaymentMethod: nameof(PaymentMethods.Cash), IsPaymentReceived: true })
                     {
-                        nameof(PaymentMethods.Bank) => ReservationStatus.PendingPaymentVerification,
-                        nameof(PaymentMethods.Cash) => ReservationStatus.PendingCashPayment,
-                        _ => throw new ArgumentException("Invalid payment method")
-                    };
+                        status = ReservationStatus.Completed;
+                    }
+                    else
+                    {
+                        status = request.PaymentMethod switch
+                        {
+                            nameof(PaymentMethods.Bank) => ReservationStatus.PendingPaymentVerification,
+                            nameof(PaymentMethods.Cash) => ReservationStatus.PendingCashPayment,
+                            _ => throw new ArgumentException("Invalid payment method")
+                        };
+                    }
                 }
                 else
                 {
@@ -58,6 +65,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                 };
 
                 await reservationRepository.AddAsync(reservation, cancellationToken);
+                logger.Information("Reservation created with ID {ReservationID}.", reservation.ReservationID);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
 
                 // Create user details
@@ -72,6 +80,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                 };
 
                 await reservationUserRepository.AddAsync(reservationUserDetails, cancellationToken);
+                logger.Information("Reservation user details created for ReservationID {ReservationID}.", reservation.ReservationID);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
 
                 // Create reserved items
@@ -87,7 +96,6 @@ namespace Application.Features.ManageReservations.CreateReservation
                         };
 
                         await reservedPackageRepository.AddAsync(reservedPackage, cancellationToken);
-
                         logger.Information("Reserved package with ID {PackageID} for reservation {ReservationID}.",
                             item.ItemId, reservation.ReservationID);
                     }
@@ -119,12 +127,12 @@ namespace Application.Features.ManageReservations.CreateReservation
                             };
 
                             await reservedRoomRepository.AddAsync(reservedRoom, cancellationToken);
+                            logger.Information("Reserved room with ID {RoomID} for reservation {ReservationID}.",
+                                room.RoomID, reservation.ReservationID);
 
                             room.Status = "Reserved";
                             await roomRepository.UpdateAsync(room, cancellationToken);
-
-                            logger.Information("Reserved room with ID {RoomID} for reservation {ReservationID}.",
-                                room.RoomID, reservation.ReservationID);
+                            logger.Information("Room with ID {RoomID} status updated to 'Reserved'.", room.RoomID);
                         }
                     }
                 }
@@ -134,19 +142,22 @@ namespace Application.Features.ManageReservations.CreateReservation
                 {
                     var payment = new Payment
                     {
-                        Method = request.PaymentMethod.ToString(),
-                        AmountPaid = null,
+                        Method = request.PaymentMethod,
+                        AmountPaid = request is { PaymentMethod: nameof(PaymentMethods.Cash), IsPaymentReceived: true } ? request.Total : null,
                         Currency = "LKR",
                         CreatedDate = DateTime.UtcNow,
-                        Status = "Pending",
+                        Status = request is { PaymentMethod: nameof(PaymentMethods.Cash), IsPaymentReceived: true } ? "Completed" : "Pending",
                         ReservationID = reservation.ReservationID,
                         ReservationUserID = reservationUserDetails.ReservationUserDetailID,
                     };
 
                     await paymentRepository.AddAsync(payment, cancellationToken);
+                    logger.Information("Payment record created for ReservationID {ReservationID} with status {PaymentStatus}.",
+                        reservation.ReservationID, payment.Status);
                 }
 
                 await unitOfWork.SaveChangesAsync(cancellationToken);
+                logger.Information("All changes saved to the database for ReservationID {ReservationID}.", reservation.ReservationID);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 // expire for late online payments

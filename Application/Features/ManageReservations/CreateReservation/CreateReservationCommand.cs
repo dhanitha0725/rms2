@@ -12,6 +12,7 @@ public class CreateReservationCommand : IRequest<Result<ReservationResultDto>>
     public decimal Total { get; set; }
     public string CustomerType { get; set; }
     public string PaymentMethod { get; set; }
+    public bool IsPaymentReceived { get; set; }
     public List<BookingItemDto> Items { get; set; }
     public ReservationUserInfoDto UserDetails { get; set; }
 }
