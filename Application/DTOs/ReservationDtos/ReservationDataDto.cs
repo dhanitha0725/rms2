@@ -28,6 +28,7 @@
         public List<PaymentDto>? Payments { get; set; }
         public List<ReservationPackageDto>? ReservedPackages { get; set; }
         public List<ReservationRoomDto>? ReservedRooms { get; set; }
+        public List<DocumentDetailsDto>? Documents { get; set; }
     }
 
     // reservation user details
@@ -63,5 +64,13 @@
     {
         public string PackageName { get; set; }
         public string FacilityName { get; set; }
+    }
+
+    // documents details
+    public class DocumentDetailsDto
+    {
+        public int DocumentId { get; set; }
+        public string DocumentType { get; set; }
+        public string Url { get; set; }
     }
 }

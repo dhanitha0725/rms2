@@ -72,19 +72,19 @@ namespace Persistence.Repositories
         {
             return await context.Reservations
                 .Where(r => r.ReservationID == reservationId)
-                .Include(r => r.ReservationUserDetail)
-                .Include(r => r.Payments)!
-                .ThenInclude(p => p.Documents)
-                .Include(r => r.Documents)
-                .Include(r => r.ReservedPackages)
-                .ThenInclude(rp => rp.Package)
-                .ThenInclude(p => p.Facility)
-                .Include(r => r.ReservedRooms)!
-                .ThenInclude(rr => rr.Room)
-                .ThenInclude(room => room.RoomType)
-                .Include(r => r.ReservedRooms)! 
-                    .ThenInclude(rr => rr.Room)
-                        .ThenInclude(room => room.Facility) 
+                    .Include(r => r.ReservationUserDetail)
+                    .Include(r => r.Payments)!
+                        .ThenInclude(p => p.Documents)
+                    .Include(r => r.Documents)
+                    .Include(r => r.ReservedPackages)
+                        .ThenInclude(rp => rp.Package)
+                            .ThenInclude(p => p.Facility)
+                    .Include(r => r.ReservedRooms)!
+                        .ThenInclude(rr => rr.Room)
+                            .ThenInclude(room => room.RoomType)
+                    .Include(r => r.ReservedRooms)!
+                        .ThenInclude(rr => rr.Room)
+                        .ThenInclude(room => room.Facility)
                 .FirstOrDefaultAsync(cancellationToken);
         }
     }
