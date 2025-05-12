@@ -13,7 +13,6 @@ namespace Utilities.BackgroundJobs
         private readonly ILogger _logger;
         private Timer _timer; // Private field to hold the Timer instance
 
-        // Constructor without Timer parameter
         public ReservationCompletionScheduler(
             IBackgroundTaskQueue queue,
             IServiceScopeFactory serviceScopeFactory,
@@ -28,11 +27,13 @@ namespace Utilities.BackgroundJobs
         {
             _logger.Information("Starting reservation completion scheduler");
 
+            // Schedule the task to run every 5 minutes
             _timer = new Timer(
                 async (state) => await EnqueueReservationCompletionTask(),
                 null,
-                ScheduleTime(),           // Initial delay
-                TimeSpan.FromDays(1));    // Repeat every day
+                TimeSpan.Zero,           // Start immediately
+                TimeSpan.FromMinutes(5)  // Repeat every 5 minutes
+            );
 
             return Task.CompletedTask;
         }
@@ -43,19 +44,6 @@ namespace Utilities.BackgroundJobs
             _timer?.Change(Timeout.Infinite, 0); // Stop the timer
             _timer?.Dispose();                   // Dispose of the timer
             return Task.CompletedTask;
-        }
-
-        private static TimeSpan ScheduleTime()
-        {
-            var now = DateTime.UtcNow;
-            var nextScheduledTime = now.Date.AddDays(1).AddMinutes(5); // Schedule for 5 minutes past midnight of the next day
-
-            if (nextScheduledTime <= now)
-            {
-                nextScheduledTime = nextScheduledTime.AddDays(1); // Ensure the time is in the future
-            }
-
-            return nextScheduledTime - now;
         }
 
         private async Task EnqueueReservationCompletionTask()
