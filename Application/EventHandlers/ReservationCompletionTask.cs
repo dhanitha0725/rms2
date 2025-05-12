@@ -37,6 +37,7 @@ namespace Application.EventHandlers
                         {
                             // Update reservation status to "Completed"
                             reservation.Status = ReservationStatus.Completed;
+                            reservation.UpdatedDate = DateTime.Now;
                             await reservationRepository.UpdateAsync(reservation, cancellationToken);
 
                             // Release associated rooms

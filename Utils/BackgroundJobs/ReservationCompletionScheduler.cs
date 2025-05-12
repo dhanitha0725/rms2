@@ -54,7 +54,7 @@ namespace Utilities.BackgroundJobs
                 var task = scope.ServiceProvider.GetRequiredService<ReservationCompletionTask>();
                 await task.Execute(cancellationToken);
             });
-            _logger.Information("Enqueued reservation completion task.");
+            _logger.Information("reservation completion task done.");
         }
     }
 }

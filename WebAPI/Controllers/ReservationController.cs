@@ -1,5 +1,6 @@
 ﻿using Application.DTOs.ReservationDtos;
 using Application.Features.ManageFacility.SelectedFacilityDetails;
+using Application.Features.ManageReservations.ApproveDocument;
 using Application.Features.ManageReservations.CalculateTotal;
 using Application.Features.ManageReservations.CheckAvailability;
 using Application.Features.ManageReservations.CreateReservation;
@@ -102,6 +103,18 @@ namespace WebAPI.Controllers
                 return BadRequest(result.Error);
             }
             return Ok(result.Value);
+        }
+
+        // Approve document (reservation + payment)
+        [HttpPost("approve-document")]
+        public async Task<IActionResult> ApproveDocument([FromBody] ApproveDocumentCommand command)
+        {
+            var result = await mediator.Send(command);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.Error);
+            }
+            return Ok(result);
         }
     }
 }
