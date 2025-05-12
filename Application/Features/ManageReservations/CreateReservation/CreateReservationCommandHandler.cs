@@ -138,9 +138,10 @@ namespace Application.Features.ManageReservations.CreateReservation
                 }
 
                 // Create payment record for non-online payments
+                Payment? payment = null;
                 if (request.PaymentMethod is nameof(PaymentMethods.Bank) or nameof(PaymentMethods.Cash))
                 {
-                    var payment = new Payment
+                    payment = new Payment
                     {
                         Method = request.PaymentMethod,
                         AmountPaid = request is { PaymentMethod: nameof(PaymentMethods.Cash), IsPaymentReceived: true } ? request.Total : null,
@@ -177,7 +178,8 @@ namespace Application.Features.ManageReservations.CreateReservation
                     ReservationId = reservation.ReservationID,
                     TotalPrice = reservation.Total,
                     Status = reservation.Status.ToString(),
-                    OrderId = reservation.ReservationID.ToString()
+                    OrderId = reservation.ReservationID.ToString(),
+                    PaymentId = payment?.PaymentID
                 });
             }
             catch (Exception e)

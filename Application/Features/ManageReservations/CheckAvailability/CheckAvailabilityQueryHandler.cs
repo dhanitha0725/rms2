@@ -78,34 +78,29 @@ namespace Application.Features.ManageReservations.CheckAvailability
         private async Task<bool> CheckRoomAvailability(
             AvailableItemDto item,
             CheckAvailabilityDto request,
-            CancellationToken cancellationToken) 
+            CancellationToken cancellationToken)
         {
             var roomTypeId = item.ItemId;
             var facilityId = request.FacilityId;
-            // get total of available rooms
-            var totalRooms = await roomRepository.CountAsync(
+
+            // Fetch rooms that are available and not reserved during the requested date range
+            var availableRoomsCount = await roomRepository.CountAsync(
                 r => r.RoomTypeID == roomTypeId &&
                      r.FacilityID == facilityId &&
-                     r.Status == "Available",
+                     r.Status == "Available" &&
+                     !r.ReservedRooms.Any(rr =>
+                         rr.StartDate < request.EndDate &&
+                         rr.EndDate > request.StartDate),
                 cancellationToken);
 
-            if (totalRooms < item.Quantity)
+            if (availableRoomsCount < item.Quantity)
             {
                 logger.Warning("Insufficient rooms of type {RoomTypeId} in facility {FacilityId}.",
                     roomTypeId, facilityId);
                 return false;
             }
 
-            // get total of reserved rooms
-            var reservedRoomsCount = await reservedRoomRepository.CountAsync(
-                rr => rr.Room.RoomTypeID == roomTypeId &&
-                      rr.Room.FacilityID == facilityId &&
-                      rr.StartDate < request.EndDate &&
-                      rr.EndDate > request.StartDate,
-                cancellationToken);
-
-            var availableRooms = totalRooms - reservedRoomsCount;
-            return availableRooms >= item.Quantity;
+            return true;
         }
     }
 }
