@@ -26,76 +26,54 @@ namespace Application.Features.ManageReservations.ApproveDocument
                 // Retrieve the document
                 var document = await documentRepository.GetByIdAsync(request.DocumentId, cancellationToken);
                 if (document == null)
-                {
                     return Result.Failure(new Error("Document Not Found"));
-                }
 
-                // Check if the document is approved
                 if (request.IsApproved)
                 {
-                    request.IsApproved = true;
-
                     // Handle ApprovalDocument
                     if (request.DocumentType == nameof(DocumentType.ApprovalDocument))
                     {
                         if (document.ReservationId == null)
-                        {
                             return Result.Failure(new Error("Document is not associated with a reservation."));
-                        }
 
-                        var reservation = await reservationRepository
-                            .GetByIdAsync(document.ReservationId.Value, cancellationToken);
+                        var reservation = await reservationRepository.GetByIdAsync(document.ReservationId.Value, cancellationToken);
                         if (reservation == null)
-                        {
                             return Result.Failure(new Error("Reservation not found"));
-                        }
 
                         if (reservation.Status != ReservationStatus.PendingApproval)
-                        {
                             return Result.Failure(new Error("Reservation is not in PendingApproval status."));
-                        }
 
                         reservation.Status = ReservationStatus.PendingPayment;
-                        reservation.UpdatedDate = DateTime.Now;
+                        reservation.UpdatedDate = DateTime.UtcNow;
                         await reservationRepository.UpdateAsync(reservation, cancellationToken);
+                        logger.Information("Reservation {ReservationId} status updated to PendingPayment after document approval.", reservation.ReservationID);
                     }
                     // Handle BankReceipt
                     else if (request.DocumentType == nameof(DocumentType.BankReceipt))
                     {
                         if (document.PaymentId == null)
-                        {
                             return Result.Failure(new Error("Document is not associated with a payment."));
-                        }
 
                         var payment = await paymentRepository.GetByIdAsync(document.PaymentId.Value, cancellationToken);
                         if (payment == null)
-                        {
                             return Result.Failure(new Error("Payment not found."));
-                        }
 
                         var reservation = await reservationRepository.GetByIdAsync(payment.ReservationID, cancellationToken);
                         if (reservation == null)
-                        {
                             return Result.Failure(new Error("Reservation not found."));
-                        }
 
                         if (reservation.Status != ReservationStatus.PendingPaymentVerification)
-                        {
                             return Result.Failure(new Error("Reservation is not in PendingPaymentVerification status."));
-                        }
 
-                        // Update payment status
                         payment.AmountPaid = request.AmountPaid;
                         payment.Status = "Completed";
                         await paymentRepository.UpdateAsync(payment, cancellationToken);
+                        logger.Information("Payment {PaymentId} status updated to Completed after document approval.", payment.PaymentID);
 
-                        // Update reservation status to Confirmed
                         reservation.Status = ReservationStatus.Confirmed;
                         reservation.UpdatedDate = DateTime.UtcNow;
                         await reservationRepository.UpdateAsync(reservation, cancellationToken);
-
-                        logger.Information("Reservation {ReservationId} status updated to Confirmed after payment completion.",
-                            reservation.ReservationID);
+                        logger.Information("Reservation {ReservationId} status updated to Confirmed after payment completion.", reservation.ReservationID);
                     }
                     else
                     {
@@ -105,28 +83,69 @@ namespace Application.Features.ManageReservations.ApproveDocument
                 else
                 {
                     // Handle document rejection
-                    request.IsApproved = false;
-
-                    if (document.ReservationId != null)
+                    if (request.DocumentType == nameof(DocumentType.BankReceipt))
                     {
-                        var reservation = await reservationRepository.GetByIdAsync(document.ReservationId.Value, cancellationToken);
-                        if (reservation != null)
-                        {
-                            reservation.Status = ReservationStatus.Cancelled;
-                            reservation.UpdatedDate = DateTime.Now;
-                            await reservationRepository.UpdateAsync(reservation, cancellationToken);
+                        if (document.PaymentId == null)
+                            return Result.Failure(new Error("Document is not associated with a payment."));
 
-                            // Release associated rooms
-                            var reservedRooms = reservation.ReservedRooms;
-                            if (reservedRooms != null)
+                        var payment = await paymentRepository.GetByIdAsync(document.PaymentId.Value, cancellationToken);
+                        if (payment == null)
+                            return Result.Failure(new Error("Payment not found."));
+
+                        var reservation = await reservationRepository.GetByIdAsync(payment.ReservationID, cancellationToken);
+                        if (reservation == null)
+                            return Result.Failure(new Error("Reservation not found."));
+
+                        payment.Status = "Cancelled";
+                        await paymentRepository.UpdateAsync(payment, cancellationToken);
+
+                        reservation.Status = ReservationStatus.Cancelled;
+                        reservation.UpdatedDate = DateTime.UtcNow;
+                        await reservationRepository.UpdateAsync(reservation, cancellationToken);
+                        logger.Information("Reservation {ReservationId} and Payment {PaymentId} status updated to Cancelled after bank receipt rejection.", reservation.ReservationID, payment.PaymentID);
+
+                        // Release associated rooms
+                        // (available status is not updating)
+                        var reservedRooms = reservation.ReservedRooms;
+                        if (reservedRooms != null)
+                        {
+                            foreach (var reservedRoom in reservedRooms)
                             {
-                                foreach (var reservedRoom in reservedRooms)
+                                var room = await roomRepository.GetByIdAsync(reservedRoom.RoomID, cancellationToken);
+                                if (room != null)
                                 {
-                                    var room = await roomRepository.GetByIdAsync(reservedRoom.RoomID, cancellationToken);
-                                    if (room != null)
+                                    room.Status = "Available";
+                                    await roomRepository.UpdateAsync(room, cancellationToken);
+                                    logger.Information("Room {RoomId} status updated to Available after reservation cancellation.", room.RoomID);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (document.ReservationId != null)
+                        {
+                            var reservation = await reservationRepository.GetByIdAsync(document.ReservationId.Value, cancellationToken);
+                            if (reservation != null)
+                            {
+                                reservation.Status = ReservationStatus.Cancelled;
+                                reservation.UpdatedDate = DateTime.UtcNow;
+                                await reservationRepository.UpdateAsync(reservation, cancellationToken);
+                                logger.Information("Reservation {ReservationId} status updated to Cancelled after document rejection.", reservation.ReservationID);
+
+                                // Release associated rooms
+                                var reservedRooms = reservation.ReservedRooms;
+                                if (reservedRooms != null)
+                                {
+                                    foreach (var reservedRoom in reservedRooms)
                                     {
-                                        room.Status = "Available";
-                                        await roomRepository.UpdateAsync(room, cancellationToken);
+                                        var room = await roomRepository.GetByIdAsync(reservedRoom.RoomID, cancellationToken);
+                                        if (room != null)
+                                        {
+                                            room.Status = "Available";
+                                            await roomRepository.UpdateAsync(room, cancellationToken);
+                                            logger.Information("Room {RoomId} status updated to Available after reservation cancellation.", room.RoomID);
+                                        }
                                     }
                                 }
                             }

@@ -37,8 +37,10 @@ namespace Application.EventHandlers
                         {
                             // Update reservation status to "Completed"
                             reservation.Status = ReservationStatus.Completed;
-                            reservation.UpdatedDate = DateTime.Now;
+                            reservation.UpdatedDate = DateTime.UtcNow;
                             await reservationRepository.UpdateAsync(reservation, cancellationToken);
+                            logger.Information("Reservation {ReservationId} status updated to Completed.",
+                                reservation.ReservationID);
 
                             // Release associated rooms
                             var reservedRooms = await roomRepository.GetAllAsync(
@@ -49,6 +51,8 @@ namespace Application.EventHandlers
                             {
                                 room.Status = "Available";
                                 await roomRepository.UpdateAsync(room, cancellationToken);
+                                logger.Information("Room {RoomId} status updated to Available after reservation completion.",
+                                    room.RoomID);
                             }
 
                             logger.Information("Reservation {ReservationId} completed and rooms released.",
