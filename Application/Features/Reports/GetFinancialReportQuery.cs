@@ -9,6 +9,6 @@ namespace Application.Features.Reports
     {
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public int? FacilityId { get; set; }
+        public IEnumerable<int>? FacilityIds { get; set; }
     }
 }

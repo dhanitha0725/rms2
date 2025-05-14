@@ -6,8 +6,8 @@ namespace Application.Abstractions.Interfaces
     {
         Task<List<FinancialReport>> GetFinancialReportAsync(
             DateTime startDate, 
-            DateTime endDate, 
-            int? facilityId, 
+            DateTime endDate,
+            IEnumerable<int>? facilityIds,
             CancellationToken cancellationToken = default);
     }
 }

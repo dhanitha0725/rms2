@@ -1,5 +1,4 @@
 ﻿using Application.Abstractions.Interfaces;
-using Application.DTOs.ReportsDto;
 using Domain.Common;
 using Domain.Entities;
 using MediatR;
@@ -17,7 +16,7 @@ namespace Application.Features.Reports
             var financialReport = await reportRepository.GetFinancialReportAsync(
                 request.StartDate,
                 request.EndDate,
-                request.FacilityId,
+                request.FacilityIds,
                 cancellationToken);
 
             return Result<List<FinancialReport>>.Success(financialReport); 

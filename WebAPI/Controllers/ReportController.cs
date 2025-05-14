@@ -12,13 +12,13 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetFinancialReport(
             [FromQuery] DateTime startDate,
             [FromQuery] DateTime endDate,
-            [FromQuery] int? facilityId)
+            [FromQuery] List<int>? facilityIds) 
         {
             var query = new GetFinancialReportQuery
             {
                 StartDate = startDate,
                 EndDate = endDate,
-                FacilityId = facilityId
+                FacilityIds = facilityIds
             };
             var result = await mediator.Send(query);
             if (!result.IsSuccess)

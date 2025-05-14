@@ -11,7 +11,7 @@ namespace Persistence.Repositories
         public async Task<List<FinancialReport>> GetFinancialReportAsync(
             DateTime startDate,
             DateTime endDate,
-            int? facilityId,
+            IEnumerable<int>? facilityIds,
             CancellationToken cancellationToken = default)
         {
             var sql = @"
@@ -60,17 +60,26 @@ namespace Persistence.Repositories
                     WHERE r.""Status"" IN ('Confirmed', 'Completed')
                       AND (r.""EndDate"" AT TIME ZONE 'Asia/Kolkata')::date BETWEEN @startDate AND @endDate
                 ) res ON res.""FacilityID"" = f.""FacilityID""
-                WHERE (@facilityId IS NULL OR f.""FacilityID"" = @facilityId::integer)
+                WHERE (
+                    @facilityIds IS NULL OR
+                    f.""FacilityID"" = ANY(@facilityIds)
+                )
                 GROUP BY f.""FacilityID"", f.""FacilityName""
                 ORDER BY f.""FacilityName"";
             ";
+
+            var facilityIdsParam = new Npgsql.NpgsqlParameter(
+                "facilityIds", NpgsqlTypes.NpgsqlDbType.Integer | NpgsqlTypes.NpgsqlDbType.Array)
+            {
+                Value = (facilityIds != null && facilityIds.Any()) 
+                    ? facilityIds.ToArray() : DBNull.Value
+            };
 
             var result = await context.Set<FinancialReport>()
                 .FromSqlRaw(sql,
                     new Npgsql.NpgsqlParameter("startDate", startDate),
                     new Npgsql.NpgsqlParameter("endDate", endDate),
-                    new Npgsql.NpgsqlParameter("facilityId", System.Data.DbType.Int32) 
-                        { Value = (object?)facilityId ?? DBNull.Value }
+                    facilityIdsParam
                 )
                 .ToListAsync(cancellationToken);
 
