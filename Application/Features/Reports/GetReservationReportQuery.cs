@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Application.Features.Reports
 {
-    public class GetFinancialReportQuery : IRequest<Result<List<FinancialReport>>>
+    public class GetReservationReportQuery : IRequest<Result<List<ReservationReport>>>
     {
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }

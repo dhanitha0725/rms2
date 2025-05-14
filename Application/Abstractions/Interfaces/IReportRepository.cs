@@ -9,5 +9,12 @@ namespace Application.Abstractions.Interfaces
             DateTime endDate,
             IEnumerable<int>? facilityIds,
             CancellationToken cancellationToken = default);
+
+        Task<List<ReservationReport>> GetReservationReportAsync(
+            DateTime startDate,
+            DateTime endDate,
+            IEnumerable<int>? facilityIds,
+            CancellationToken cancellationToken = default);
+
     }
 }

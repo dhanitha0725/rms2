@@ -85,5 +85,69 @@ namespace Persistence.Repositories
 
             return result;
         }
+
+        public async Task<List<ReservationReport>> GetReservationReportAsync(
+            DateTime startDate,
+            DateTime endDate,
+            IEnumerable<int>? facilityIds,
+            CancellationToken cancellationToken = default)
+        {
+            var sql = @"
+                SELECT
+                    f.""FacilityID"" AS ""FacilityId"",
+                    f.""FacilityName"",
+                    COUNT(DISTINCT r.""ReservationID"") AS ""TotalReservations"",
+                    COUNT(DISTINCT CASE WHEN r.""Status"" = 'Completed' THEN r.""ReservationID"" END) AS ""TotalCompletedReservations""
+                FROM ""Facilities"" f
+                LEFT JOIN (
+                    -- Room-based reservations
+                    SELECT
+                        r.""ReservationID"",
+                        rm.""FacilityID"",
+                        r.""Status"",
+                        (r.""EndDate"" AT TIME ZONE 'Asia/Kolkata')::date AS ""EndDate""
+                    FROM ""Reservations"" r
+                    JOIN ""ReservedRooms"" rr ON rr.""ReservationID"" = r.""ReservationID""
+                    JOIN ""Rooms"" rm ON rm.""RoomID"" = rr.""RoomID""
+                    WHERE (r.""EndDate"" AT TIME ZONE 'Asia/Kolkata')::date BETWEEN @startDate AND @endDate
+
+                    UNION ALL
+
+                    -- Package-based reservations
+                    SELECT
+                        r.""ReservationID"",
+                        pkg.""FacilityID"",
+                        r.""Status"",
+                        (r.""EndDate"" AT TIME ZONE 'Asia/Kolkata')::date AS ""EndDate""
+                    FROM ""Reservations"" r
+                    JOIN ""ReservedPackages"" rp ON rp.""ReservationID"" = r.""ReservationID""
+                    JOIN ""Packages"" pkg ON pkg.""PackageID"" = rp.""PackageID""
+                    WHERE (r.""EndDate"" AT TIME ZONE 'Asia/Kolkata')::date BETWEEN @startDate AND @endDate
+                ) r ON r.""FacilityID"" = f.""FacilityID""
+                WHERE (
+                    @facilityIds IS NULL OR
+                    f.""FacilityID"" = ANY(@facilityIds)
+                )
+                GROUP BY f.""FacilityID"", f.""FacilityName""
+                ORDER BY f.""FacilityName"";
+            ";
+
+            var facilityIdsParam = new Npgsql.NpgsqlParameter(
+                "facilityIds", NpgsqlTypes.NpgsqlDbType.Integer | NpgsqlTypes.NpgsqlDbType.Array)
+            {
+                Value = (facilityIds != null && facilityIds.Any())
+                    ? facilityIds.ToArray() : DBNull.Value
+            };
+
+            var result = await context.Set<ReservationReport>()
+                .FromSqlRaw(sql,
+                    new Npgsql.NpgsqlParameter("startDate", startDate),
+                    new Npgsql.NpgsqlParameter("endDate", endDate),
+                    facilityIdsParam
+                )
+                .ToListAsync(cancellationToken);
+
+            return result;
+        }
     }
 }

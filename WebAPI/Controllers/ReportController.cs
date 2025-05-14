@@ -27,5 +27,25 @@ namespace WebAPI.Controllers
             }
             return Ok(result.Value);
         }
+
+        [HttpGet("reservation-report")]
+        public async Task<IActionResult> GetReservationReport(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] List<int>? facilityIds)
+        {
+            var query = new GetReservationReportQuery
+            {
+                StartDate = startDate,
+                EndDate = endDate,
+                FacilityIds = facilityIds
+            };
+            var result = await mediator.Send(query);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.Error);
+            }
+            return Ok(result.Value);
+        }
     }
 }
