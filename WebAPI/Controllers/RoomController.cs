@@ -1,6 +1,7 @@
 ﻿using Application.DTOs.FacilityDtos;
 using Application.Features.ManageFacility.AddRooms;
 using Application.Features.ManageFacility.AddRoomTypes;
+using Application.Features.ManageFacility.GetRoomTypes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -35,6 +36,16 @@ namespace WebAPI.Controllers
                 return BadRequest(new { Error = result.Error.Message });
 
             return Ok(new { RoomTypeID = result.Value });
+        }
+
+        [HttpGet("get-room-types")]
+        public async Task<IActionResult> GetRoomTypes()
+        {
+            var query = new GetRoomTypesQuery();
+            var result = await mediator.Send(query);
+            if (!result.IsSuccess)
+                return BadRequest(new { Error = result.Error.Message });
+            return Ok(new { RoomTypes = result.Value });
         }
     }
 }

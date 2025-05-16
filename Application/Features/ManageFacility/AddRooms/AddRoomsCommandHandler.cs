@@ -10,7 +10,6 @@ namespace Application.Features.ManageFacility.AddRooms
     public class AddRoomsCommandHandler(
                     IGenericRepository<Facility, int> facilityRepository,
                     IGenericRepository<Room, int> roomRepository,
-                    IGenericRepository<RoomPricing, int> roomPricingRepository,
                     IUnitOfWork unitOfWork,
                     ILogger logger)
                     : IRequestHandler<AddRoomsCommand, Result<RoomConfigurationDto>>
@@ -38,47 +37,15 @@ namespace Application.Features.ManageFacility.AddRooms
                         RoomTypeID = request.RoomConfigurationDto.RoomTypeId,
                         Capacity = request.RoomConfigurationDto.Capacity,
                         NumberOfBeds = request.RoomConfigurationDto.NumberOfBeds,
-                        Status = request.RoomConfigurationDto.Status
+                        Status = "Available"
                     }).ToList();
 
                 await roomRepository.AddRangeAsync(rooms, cancellationToken);
 
-                // add or update pricing for the room type
-                foreach (var pricing in request.RoomConfigurationDto.Pricing)
-                {
-                    var sector = pricing.Key;
-                    var price = pricing.Value;
-
-                    //check if pricing exists
-                    var existingPricing = (await roomPricingRepository.GetAllAsync(cancellationToken))
-                        .FirstOrDefault(rp => rp.FacilityID == request.FacilityId &&
-                                              rp.RoomTypeID == request.RoomConfigurationDto.RoomTypeId &&
-                                              rp.Sector == sector);
-
-                    if (existingPricing == null)
-                    {
-                        // add new pricing
-                        var roomPricing = new RoomPricing
-                        {
-                            FacilityID = request.FacilityId,
-                            RoomTypeID = request.RoomConfigurationDto.RoomTypeId,
-                            Sector = sector,
-                            Price = price
-                        };
-
-                        await roomPricingRepository.AddAsync(roomPricing, cancellationToken);
-                    }
-                    else
-                    {
-                        // update existing pricing
-                        existingPricing.Price = price;
-                        await roomPricingRepository.UpdateAsync(existingPricing, cancellationToken);
-                    }
-                }
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
 
-                logger.Information("Rooms and pricing added successfully");
+                logger.Information("Rooms added successfully");
 
                 return Result<RoomConfigurationDto>.Success(request.RoomConfigurationDto);
             }
