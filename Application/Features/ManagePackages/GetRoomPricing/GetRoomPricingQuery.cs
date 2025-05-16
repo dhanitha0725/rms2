@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Application.Features.ManagePackages.GetRoomPricing
 {
-    public class GetRoomPricingQuery: IRequest<Result<RoomPricingTableDto>>
+    public class GetRoomPricingQuery: IRequest<Result<List<RoomPricingTableDto>>>
     {
     }
 }

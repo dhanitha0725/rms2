@@ -16,6 +16,7 @@ namespace Application.DTOs.PackageDto
         public int RoomTypeId { get; set; }
         public string RoomTypeName { get; set; }
         public string FacilityName { get; set; }
+        public int TotalRooms { get; set; }
         public Dictionary<string, decimal> Pricings { get; set; } = new Dictionary<string, decimal>();
     }
 }
