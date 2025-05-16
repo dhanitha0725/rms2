@@ -2,7 +2,7 @@
 using Domain.Entities;
 using FluentValidation;
 
-namespace Application.Features.ManagePackages
+namespace Application.Features.ManagePackages.AddPackage
 {
     public class AddPackageCommandValidator : AbstractValidator<AddPackageCommand>
     {

@@ -1,4 +1,4 @@
-﻿namespace Application.DTOs.ReservationDtos
+﻿namespace Application.DTOs.FacilityDtos
 {
     public class RoomTypesDto
     {

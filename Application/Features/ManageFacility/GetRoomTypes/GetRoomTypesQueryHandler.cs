@@ -1,8 +1,8 @@
-﻿using Application.DTOs.ReservationDtos;
-using Domain.Common;
+﻿using Domain.Common;
 using Domain.Entities;
 using Application.Abstractions.Interfaces;
 using MediatR;
+using Application.DTOs.FacilityDtos;
 
 namespace Application.Features.ManageFacility.GetRoomTypes
 {

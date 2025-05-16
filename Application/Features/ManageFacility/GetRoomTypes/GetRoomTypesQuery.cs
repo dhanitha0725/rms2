@@ -1,4 +1,4 @@
-﻿using Application.DTOs.ReservationDtos;
+﻿using Application.DTOs.FacilityDtos;
 using Domain.Common;
 using MediatR;
 
