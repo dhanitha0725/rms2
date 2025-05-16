@@ -6,7 +6,7 @@ using Domain.Entities;
 using MediatR;
 using Serilog;
 
-namespace Application.Features.ManagePackages
+namespace Application.Features.ManagePackages.AddPackage
 {
     public class AddPackageCommandHandler(
             IGenericRepository<Package, int> packageRepository,

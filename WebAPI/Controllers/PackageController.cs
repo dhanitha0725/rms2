@@ -1,5 +1,6 @@
 ﻿using Application.DTOs.PackageDto;
-using Application.Features.ManagePackages;
+using Application.Features.ManagePackages.AddPackage;
+using Application.Features.ManagePackages.GetPackageDetails;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,6 +17,19 @@ namespace WebAPI.Controllers
         {
             var command = new AddPackageCommand(facilityId, packageDto);
             var result = await mediator.Send(command);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.Error);
+            }
+
+            return Ok(result);
+        }
+
+        [HttpGet("packages-details")]
+        public async Task<IActionResult> GetPackageDetails()
+        {
+            var query = new GetPackageDetailsQuery();
+            var result = await mediator.Send(query);
             if (!result.IsSuccess)
             {
                 return BadRequest(result.Error);
