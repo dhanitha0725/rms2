@@ -59,7 +59,6 @@ public class AddFacilityCommandHandler (
 
             // Create facility
             var facility = mapper.Map<Facility>(request.FacilityDto);
-            //facility.FacilityTypeId = request.FacilityDto.FacilityTypeId;
             facility.CreatedDate = DateTime.UtcNow;
 
 
