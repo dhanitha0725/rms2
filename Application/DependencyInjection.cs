@@ -1,6 +1,7 @@
 ﻿using Application.Abstractions.Interfaces;
 using Application.Behaviors;
 using Application.EventHandlers;
+using Application.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,8 @@ namespace Application
             // register pipeline behaviors
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationPipelineBehaviour<,>));
             services.AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingPipelineBehavior<,>));
+
+            services.AddScoped<IEmailContentService, EmailContentService>();
 
             return services;
         }
