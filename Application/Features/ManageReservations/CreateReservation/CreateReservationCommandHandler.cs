@@ -16,10 +16,11 @@ namespace Application.Features.ManageReservations.CreateReservation
                 IGenericRepository<ReservedPackage, int> reservedPackageRepository,
                 IGenericRepository<ReservedRoom, int> reservedRoomRepository,
                 IGenericRepository<Room, int> roomRepository,
-                IGenericRepository<Payment,int> paymentRepository,
+                IGenericRepository<Payment, int> paymentRepository,
                 IBackgroundTaskQueue backgroundTaskQueue,
                 IServiceScopeFactory serviceScopeFactory,
                 IEmailService emailService,
+                IEmailContentService emailContentService,
                 IUnitOfWork unitOfWork,
                 ILogger logger)
                 : IRequestHandler<CreateReservationCommand, Result<ReservationResultDto>>
@@ -261,87 +262,12 @@ namespace Application.Features.ManageReservations.CreateReservation
                 using var scope = serviceScopeFactory.CreateScope();
                 var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
-                var reservationRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<Reservation, int>>();
-                var reservedPackageRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<ReservedPackage, int>>();
-                var reservedRoomRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<ReservedRoom, int>>();
-                var packageRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<Package, int>>();
-                var roomRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<Room, int>>();
-                var facilityRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<Facility, int>>();
-                var roomTypeRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<RoomType, int>>();
 
                 try
                 {
-                    // Fetch reservation and related data
-                    var reservation = await reservationRepository.GetByIdAsync(reservationId, cancellationToken);
-                    if (reservation == null)
-                    {
-                        logger.Warning("Reservation not found for summary email: {ReservationId}", reservationId);
-                        return;
-                    }
-
-                    // Build summary
-                    var summary = $"""
-
-                                   Reservation Summary
-                                   -------------------
-                                   Reservation ID: {reservation.ReservationID}
-                                   Status: {reservation.Status}
-                                   Start Date: {reservation.StartDate:yyyy-MM-dd HH:mm}
-                                   End Date: {reservation.EndDate:yyyy-MM-dd HH:mm}
-                                   Total: {reservation.Total:C}
-
-                                   Reserved Items:
-
-                                   """;
-
-                    // Reserved Packages
-                    var reservedPackages = (await reservedPackageRepository.GetAllAsync(cancellationToken))
-                        .Where(rp => rp.ReservationID == reservationId)
-                        .ToList();
-
-                    foreach (var rp in reservedPackages)
-                    {
-                        var package = await packageRepository.GetByIdAsync(rp.PackageID, cancellationToken);
-                        var facility = package != null
-                            ? await facilityRepository.GetByIdAsync(package.FacilityID, cancellationToken)
-                            : null;
-                        summary += $"- Package: {package?.PackageName ?? "N/A"} (Facility: {facility?.FacilityName ?? "N/A"})\n";
-                    }
-
-                    // Reserved Rooms
-                    var reservedRooms = (await reservedRoomRepository.GetAllAsync(cancellationToken))
-                        .Where(rr => rr.ReservationID == reservationId)
-                        .ToList();
-
-                    foreach (var rr in reservedRooms)
-                    {
-                        var room = await roomRepository.GetByIdAsync(rr.RoomID, cancellationToken);
-                        var facility = room != null
-                            ? await facilityRepository.GetByIdAsync(room.FacilityID, cancellationToken)
-                            : null;
-                        var roomType = room != null
-                            ? await roomTypeRepository.GetByIdAsync(room.RoomTypeID, cancellationToken)
-                            : null;
-                        summary += $"- Room: {roomType?.TypeName ?? "N/A"} (Facility: {facility?.FacilityName ?? "N/A"})\n";
-                    }
-
-                    var body = $"""
-                                Dear Customer,
-
-                                Your reservation (ID: {reservationId}) is under review. We will notify you once it is approved, along with payment instructions.
-
-                                {summary}
-
-                                Thank you,
-                                National Institute of Co-operative Development
-                                """;
-
-                    await emailService.SendEmailAsync(
-                        email,
-                        "Reservation Under Review",
-                        body);
-
-                    logger.Information("Pending approval notification with summary sent for reservation {ReservationId}.", reservationId);
+                    var emailBody = await emailContentService.GeneratePendingApprovalEmailBodyAsync(reservationId, cancellationToken);
+                    await emailService.SendEmailAsync(email, "Reservation Under Review", emailBody);
+                    logger.Information("Pending approval notification sent for reservation {ReservationId}.", reservationId);
                 }
                 catch (Exception e)
                 {
