@@ -2,6 +2,7 @@
 using Application.DTOs.ReservationDtos;
 using Domain.Common;
 using Domain.Entities;
+using Domain.Enums;
 using MediatR;
 using Serilog;
 
@@ -67,12 +68,22 @@ namespace Application.Features.ManageReservations.CheckAvailability
 
             var hasOverlap = await reservedPackageRepository.AnyAsync(
                 rp => rp.PackageID == packageId &&
+                      rp.Reservation.Status != ReservationStatus.Cancelled &&
+                      rp.Reservation.Status != ReservationStatus.Completed &&
                       rp.StartDate < request.EndDate &&
                       rp.EndDate > request.StartDate,
                 cancellationToken);
-            if (!hasOverlap) return !hasOverlap;
-            logger.Warning("Package with ID {PackageId} has overlapping reservations.", packageId);
-            return false;
+
+            if (hasOverlap)
+            {
+                logger.Information("Package with ID {PackageId} has overlapping active reservations between {StartDate} and {EndDate}.",
+                    packageId, request.StartDate, request.EndDate);
+                return false;
+            }
+
+            logger.Information("Package with ID {PackageId} is available between {StartDate} and {EndDate}.",
+                packageId, request.StartDate, request.EndDate);
+            return true;
         }
 
         private async Task<bool> CheckRoomAvailability(
@@ -89,6 +100,8 @@ namespace Application.Features.ManageReservations.CheckAvailability
                      r.FacilityID == facilityId &&
                      r.Status == "Available" &&
                      !r.ReservedRooms.Any(rr =>
+                         rr.Reservation.Status != ReservationStatus.Cancelled &&
+                         rr.Reservation.Status != ReservationStatus.Completed &&
                          rr.StartDate < request.EndDate &&
                          rr.EndDate > request.StartDate),
                 cancellationToken);

@@ -92,7 +92,9 @@ namespace Application.Features.ManageReservations.CreateReservation
                         {
                             ReservationID = reservation.ReservationID,
                             PackageID = item.ItemId,
-                            status = "reserved"
+                            status = "reserved",
+                            StartDate = request.StartDate,
+                            EndDate = request.EndDate
                         };
 
                         await reservedPackageRepository.AddAsync(reservedPackage, cancellationToken);
