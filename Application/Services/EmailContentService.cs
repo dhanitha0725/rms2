@@ -1,6 +1,5 @@
 ﻿using Application.Abstractions.Interfaces;
 using Domain.Entities;
-using System.Text;
 
 namespace Application.Services
 {
@@ -23,58 +22,60 @@ namespace Application.Services
             string totalAmount = reservation.Total.ToString("C");
 
             // Build simplified email HTML
-            var emailHtml = $@"
-            <!DOCTYPE html>
-            <html lang=""en"">
-            <head>
-                <meta charset=""UTF-8"">
-                <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
-                <title>Reservation Information</title>
-                <style>
-                    body {{
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        line-height: 1.6;
-                        color: #333;
-                        margin: 0;
-                        padding: 20px;
-                    }}
-                    .container {{
-                        max-width: 600px;
-                        margin: 0 auto;
-                    }}
-                    h1 {{
-                        color: #207cca;
-                    }}
-                    .detail-item {{
-                        margin-bottom: 15px;
-                    }}
-                    .label {{
-                        font-weight: bold;
-                    }}
-                </style>
-            </head>
-            <body>
-                <div class=""container"">
-                    <h1>Reservation Details</h1>
-                    
-                    <div class=""detail-item"">
-                        <span class=""label"">Reservation ID:</span> {reservation.ReservationID}
-                    </div>
-                    
-                    <div class=""detail-item"">
-                        <span class=""label"">Start Date:</span> {startDate}
-                    </div>
-                    
-                    <div class=""detail-item"">
-                        <span class=""label"">End Date:</span> {endDate}
-                    </div>
-                    
-                    <div class=""detail-item"">
-                        <span class=""label"">Total Amount:</span> {totalAmount}
-                    </div>
-                </div>
-            </body>
-            </html>";
+            var emailHtml = $$"""
+
+                                          <!DOCTYPE html>
+                                          <html lang="en">
+                                          <head>
+                                              <meta charset="UTF-8">
+                                              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                              <title>Reservation Information</title>
+                                              <style>
+                                                  body {
+                                                      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                                                      line-height: 1.6;
+                                                      color: #333;
+                                                      margin: 0;
+                                                      padding: 20px;
+                                                  }
+                                                  .container {
+                                                      max-width: 600px;
+                                                      margin: 0 auto;
+                                                  }
+                                                  h1 {
+                                                      color: #207cca;
+                                                  }
+                                                  .detail-item {
+                                                      margin-bottom: 15px;
+                                                  }
+                                                  .label {
+                                                      font-weight: bold;
+                                                  }
+                                              </style>
+                                          </head>
+                                          <body>
+                                              <div class="container">
+                                                  <h1>Reservation Details</h1>
+                                                  
+                                                  <div class="detail-item">
+                                                      <span class="label">Reservation ID:</span> {{reservation.ReservationID}}
+                                                  </div>
+                                                  
+                                                  <div class="detail-item">
+                                                      <span class="label">Start Date:</span> {{startDate}}
+                                                  </div>
+                                                  
+                                                  <div class="detail-item">
+                                                      <span class="label">End Date:</span> {{endDate}}
+                                                  </div>
+                                                  
+                                                  <div class="detail-item">
+                                                      <span class="label">Total Amount:</span> {{totalAmount}}
+                                                  </div>
+                                              </div>
+                                          </body>
+                                          </html>
+                              """;
 
             return emailHtml;
         }

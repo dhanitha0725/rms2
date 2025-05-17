@@ -19,7 +19,6 @@ namespace Application.Features.ManageReservations.CreateReservation
                 IGenericRepository<Payment, int> paymentRepository,
                 IBackgroundTaskQueue backgroundTaskQueue,
                 IServiceScopeFactory serviceScopeFactory,
-                IEmailService emailService,
                 IEmailContentService emailContentService,
                 IUnitOfWork unitOfWork,
                 ILogger logger)
