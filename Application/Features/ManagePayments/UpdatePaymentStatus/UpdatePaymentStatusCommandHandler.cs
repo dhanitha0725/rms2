@@ -4,6 +4,7 @@ using Domain.Common;
 using Domain.Entities;
 using Domain.Enums;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 namespace Application.Features.ManagePayments.UpdatePaymentStatus
@@ -13,7 +14,11 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
         ILogger logger,
         IGenericRepository<Payment, Guid> paymentRepository,
         IGenericRepository<Reservation, int> reservationRepository,
-        IUnitOfWork unitOfWork) :
+        IGenericRepository<ReservationUserDetail, int> reservationUserRepository,
+        IUnitOfWork unitOfWork,
+        IEmailContentService emailContentService,
+        IBackgroundTaskQueue backgroundTaskQueue,
+        IServiceScopeFactory serviceScopeFactory) :
         IRequestHandler<UpdatePaymentStatusCommand, Result<Guid>>
     {
         public async Task<Result<Guid>> Handle(
@@ -37,7 +42,7 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
                 // check if the signature is valid
                 if (!isValid)
                 {
-                    logger.Warning("Invalid Webhook Signature for OrderId: {OrderId}", 
+                    logger.Warning("Invalid Webhook Signature for OrderId: {OrderId}",
                         request.OrderId);
                     return Result<Guid>.Failure(new Error("Invalid Webhook Signature."));
                 }
@@ -49,7 +54,7 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
                 // check if the payment record exists
                 if (payment == null)
                 {
-                    logger.Warning("Payment record not found for OrderId: {OrderId}", 
+                    logger.Warning("Payment record not found for OrderId: {OrderId}",
                         request.OrderId);
                     return Result<Guid>.Failure(new Error("Payment record not found."));
                 }
@@ -94,7 +99,15 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
                 };
 
                 await paymentRepository.UpdateAsync(payment, cancellationToken);
+                await reservationRepository.UpdateAsync(reservation, cancellationToken);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
+
+                // If payment is completed, send confirmation email
+                if (payment.Status == "Completed")
+                {
+                    SchedulePaymentConfirmationEmail(reservation.ReservationID, payment.ReservationUserID);
+                }
+
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 logger.Information("Payment Status Updated: {PaymentId}, Status: {Status}",
@@ -107,6 +120,40 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
                 logger.Error("Payment Status Update Failed: {Message}", e.Message);
                 throw;
             }
+        }
+
+        private void SchedulePaymentConfirmationEmail(int reservationId, int reservationUserId)
+        {
+            // Queue background task to send email
+            backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+                var userRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<ReservationUserDetail, int>>();
+
+                try
+                {
+                    // Get user email
+                    var user = await userRepository.GetByIdAsync(reservationUserId, cancellationToken);
+                    if (user == null || string.IsNullOrEmpty(user.Email))
+                    {
+                        logger.Warning("User not found or email missing for ReservationUserID: {UserId}", reservationUserId);
+                        return;
+                    }
+
+                    // Generate and send email
+                    var emailBody = await emailContentService.GeneratePaymentConfirmationEmailBodyAsync(reservationId, cancellationToken);
+                    await emailService.SendEmailAsync(user.Email, "Payment Confirmation", emailBody);
+                    logger.Information("Payment confirmation email sent for reservation {ReservationId}.", reservationId);
+                }
+                catch (Exception e)
+                {
+                    logger.Error(e, "Error sending payment confirmation email for reservation {ReservationId}.", reservationId);
+                }
+            });
+
+            logger.Information("Scheduled payment confirmation email for reservation {ReservationId}.", reservationId);
         }
     }
 }
