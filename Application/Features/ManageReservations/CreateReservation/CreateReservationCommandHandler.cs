@@ -19,6 +19,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                 IGenericRepository<Payment,int> paymentRepository,
                 IBackgroundTaskQueue backgroundTaskQueue,
                 IServiceScopeFactory serviceScopeFactory,
+                IEmailService emailService,
                 IUnitOfWork unitOfWork,
                 ILogger logger)
                 : IRequestHandler<CreateReservationCommand, Result<ReservationResultDto>>
@@ -34,21 +35,16 @@ namespace Application.Features.ManageReservations.CreateReservation
                 ReservationStatus status;
                 if (string.Equals(request.CustomerType, "private", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (request is { PaymentMethod: nameof(PaymentMethods.Cash), IsPaymentReceived: true })
+                    status = request.PaymentMethod switch
                     {
-                        status = ReservationStatus.Confirmed;
-                    }
-                    else
-                    {
-                        status = request.PaymentMethod switch
-                        {
-                            nameof(PaymentMethods.Bank) => ReservationStatus.PendingPaymentVerification,
-                            nameof(PaymentMethods.Cash) => ReservationStatus.PendingCashPayment,
-                            _ => throw new ArgumentException("Invalid payment method")
-                        };
-                    }
+                        nameof(PaymentMethods.Online) => ReservationStatus.PendingPayment,
+                        nameof(PaymentMethods.Bank) => ReservationStatus.PendingPaymentVerification,
+                        nameof(PaymentMethods.Cash) when request.IsPaymentReceived => ReservationStatus.Confirmed,
+                        nameof(PaymentMethods.Cash) => ReservationStatus.PendingCashPayment,
+                        _ => throw new ArgumentException("Invalid payment method")
+                    };
                 }
-                else
+                else // public or corporate
                 {
                     status = ReservationStatus.PendingApproval;
                 }
@@ -161,19 +157,22 @@ namespace Application.Features.ManageReservations.CreateReservation
 
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 logger.Information("All changes saved to the database for ReservationID {ReservationID}.", reservation.ReservationID);
-                await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 // expire for late online payments
                 if (reservation.Status == ReservationStatus.PendingPayment)
                 {
                     ScheduleReservationExpiration(reservation.ReservationID);
                 }
-
-                // cancel for late cash payments
-                if (reservation.Status == ReservationStatus.PendingCashPayment)
+                else if (status == ReservationStatus.PendingCashPayment)
                 {
                     ScheduleReservationExpirationForCashPayments(reservation.ReservationID);
                 }
+                else if (status == ReservationStatus.PendingApproval)
+                {
+                    SchedulePendingApprovalNotification(reservation.ReservationID, reservationUserDetails.Email);
+                }
+
+                await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 return Result<ReservationResultDto>.Success(new ReservationResultDto
                 {
@@ -215,10 +214,10 @@ namespace Application.Features.ManageReservations.CreateReservation
 
         private void ScheduleReservationExpirationForCashPayments(int reservationId)
         {
-            // Queue the expiration task to run after 2 days
+            // Queue the expiration task to run after 1 day
             backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
             {
-                // Wait for 2 days
+                // Wait for 1 day
                 await Task.Delay(TimeSpan.FromDays(1), cancellationToken);
 
                 // Use a new scope to resolve services
@@ -253,6 +252,104 @@ namespace Application.Features.ManageReservations.CreateReservation
             });
 
             logger.Information("Scheduled cancellation for reservation {ReservationId} in 2 days.", reservationId);
+        }
+
+        private void SchedulePendingApprovalNotification(int reservationId, string email)
+        {
+            backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+                var reservationRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<Reservation, int>>();
+                var reservedPackageRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<ReservedPackage, int>>();
+                var reservedRoomRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<ReservedRoom, int>>();
+                var packageRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<Package, int>>();
+                var roomRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<Room, int>>();
+                var facilityRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<Facility, int>>();
+                var roomTypeRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<RoomType, int>>();
+
+                try
+                {
+                    // Fetch reservation and related data
+                    var reservation = await reservationRepository.GetByIdAsync(reservationId, cancellationToken);
+                    if (reservation == null)
+                    {
+                        logger.Warning("Reservation not found for summary email: {ReservationId}", reservationId);
+                        return;
+                    }
+
+                    // Build summary
+                    var summary = $"""
+
+                                   Reservation Summary
+                                   -------------------
+                                   Reservation ID: {reservation.ReservationID}
+                                   Status: {reservation.Status}
+                                   Start Date: {reservation.StartDate:yyyy-MM-dd HH:mm}
+                                   End Date: {reservation.EndDate:yyyy-MM-dd HH:mm}
+                                   Total: {reservation.Total:C}
+
+                                   Reserved Items:
+
+                                   """;
+
+                    // Reserved Packages
+                    var reservedPackages = (await reservedPackageRepository.GetAllAsync(cancellationToken))
+                        .Where(rp => rp.ReservationID == reservationId)
+                        .ToList();
+
+                    foreach (var rp in reservedPackages)
+                    {
+                        var package = await packageRepository.GetByIdAsync(rp.PackageID, cancellationToken);
+                        var facility = package != null
+                            ? await facilityRepository.GetByIdAsync(package.FacilityID, cancellationToken)
+                            : null;
+                        summary += $"- Package: {package?.PackageName ?? "N/A"} (Facility: {facility?.FacilityName ?? "N/A"})\n";
+                    }
+
+                    // Reserved Rooms
+                    var reservedRooms = (await reservedRoomRepository.GetAllAsync(cancellationToken))
+                        .Where(rr => rr.ReservationID == reservationId)
+                        .ToList();
+
+                    foreach (var rr in reservedRooms)
+                    {
+                        var room = await roomRepository.GetByIdAsync(rr.RoomID, cancellationToken);
+                        var facility = room != null
+                            ? await facilityRepository.GetByIdAsync(room.FacilityID, cancellationToken)
+                            : null;
+                        var roomType = room != null
+                            ? await roomTypeRepository.GetByIdAsync(room.RoomTypeID, cancellationToken)
+                            : null;
+                        summary += $"- Room: {roomType?.TypeName ?? "N/A"} (Facility: {facility?.FacilityName ?? "N/A"})\n";
+                    }
+
+                    var body = $"""
+                                Dear Customer,
+
+                                Your reservation (ID: {reservationId}) is under review. We will notify you once it is approved, along with payment instructions.
+
+                                {summary}
+
+                                Thank you,
+                                National Institute of Co-operative Development
+                                """;
+
+                    await emailService.SendEmailAsync(
+                        email,
+                        "Reservation Under Review",
+                        body);
+
+                    logger.Information("Pending approval notification with summary sent for reservation {ReservationId}.", reservationId);
+                }
+                catch (Exception e)
+                {
+                    logger.Error(e, "Error sending pending approval notification for reservation {ReservationId}.", reservationId);
+                    throw;
+                }
+            });
+            logger.Information("Scheduled pending approval notification for reservation {ReservationId}.", reservationId);
         }
     }
 }

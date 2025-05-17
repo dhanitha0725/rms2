@@ -17,10 +17,10 @@ namespace Utilities.EmailService
         {
             // create message
             var message = new MimeMessage();
-            message.From.Add(new MailboxAddress(senderEmail, senderEmail));
+            message.From.Add(new MailboxAddress("National Institute of Co-operative Development", senderEmail));
             message.To.Add(new MailboxAddress(to, to));
             message.Subject = subject;
-            message.Body = new TextPart("plain")
+            message.Body = new TextPart("html")
             {
                 Text = body
             };
