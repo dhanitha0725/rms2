@@ -122,7 +122,7 @@ namespace Application.Services
         {
             return $"""
                     <div class="header">
-                        <div class="logo">VENUE BOOKINGS</div>
+                        <div class="logo">NICD BOOKINGS</div>
                         <h1 class="title-text">{title}</h1>
                     </div>
                     """;
@@ -434,6 +434,8 @@ namespace Application.Services
                            
                            <p>Your reservation has been approved! Please complete the payment to confirm your booking.</p>
                            
+                           <p>Use the below button to make an online payment or you can make a cash payment within 2 days. Otherwise, your reservation will be automatically cancelled.</p>
+                           
                            <div style="text-align: center; margin: 25px 0;">
                                <a href="{paymentLink}" style="display: inline-block; padding: 12px 24px; background-color: #207cca; color: white; text-decoration: none; border-radius: 4px; font-size: 16px;">Pay Now</a>
                            </div>
@@ -443,7 +445,7 @@ namespace Application.Services
                            {GetTotalAmountSection(totalAmount)}
                            
                            <div class="important-note">
-                               <p><strong>Important:</strong> Please complete your payment within 30 minutes. If payment is not received within this timeframe, your reservation will be automatically canceled.</p>
+                               <p><strong>Important:</strong> If you choose online payment, please complete it within 30 minutes. For cash payment, you have 2 days from now to visit our office. If payment is not received within the specified timeframe, your reservation will be automatically canceled.</p>
                            </div>
                            
                            {GetThankYouSection()}

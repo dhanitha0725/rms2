@@ -1,5 +1,6 @@
 ﻿using Application.Abstractions.Interfaces;
 using Application.DTOs.Payment;
+using Application.Features.ManagePayments.ConfirmCashPayment;
 using Application.Features.ManagePayments.CreatePayment;
 using Application.Features.ManagePayments.GetPaymentStatus;
 using Application.Features.ManagePayments.UpdatePaymentStatus;
@@ -17,7 +18,7 @@ namespace WebAPI.Controllers
         IMediator mediator,
         IGenericRepository<Payment, Guid> paymentRepository,
         IGenericRepository<Reservation, int> reservationRepository,
-        IGenericRepository<ReservationUserDetail,int> reservationUserRepository,
+        IGenericRepository<ReservationUserDetail, int> reservationUserRepository,
         IPayhereService payhereService,
         ILogger logger)
         : ControllerBase
@@ -95,13 +96,13 @@ namespace WebAPI.Controllers
             var paymentRequest = new PaymentRequest(
                 payment.OrderID,
                 payment.AmountPaid ?? 0m,
-                "LKR", 
+                "LKR",
                 userDetail.FirstName,
                 userDetail.LastName,
                 userDetail.Email,
                 userDetail.PhoneNumber ?? "0000000000",
-                "National Institute of Co-Operative Development", 
-                "Colombo", 
+                "National Institute of Co-Operative Development",
+                "Colombo",
                 $"Reservation {reservation.ReservationID}");
 
             try
@@ -125,6 +126,17 @@ namespace WebAPI.Controllers
                 return BadRequest(result.Error);
             }
             return Ok(result);
+        }
+
+        [HttpPost("confirm-cash-payment")]
+        public async Task<IActionResult> ConfirmCashPayment([FromBody] ConfirmCashPaymentCommand command)
+        {
+            var result = await mediator.Send(command);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result.Error);
         }
     }
 }

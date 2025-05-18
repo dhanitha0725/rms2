@@ -19,7 +19,6 @@ namespace Application.Features.ManageReservations.ApproveDocument
             IUnitOfWork unitOfWork,
             IBackgroundTaskQueue backgroundTaskQueue,
             IServiceScopeFactory serviceScopeFactory,
-            IEmailContentService emailContentService,
             IConfiguration configuration,
             ILogger logger)
             : IRequestHandler<ApproveDocumentCommand, Result<PaymentInitiationResponse>>
@@ -148,7 +147,6 @@ namespace Application.Features.ManageReservations.ApproveDocument
                         logger.Information("Reservation {ReservationId} and Payment {PaymentId} status updated to Cancelled after bank receipt rejection.", reservation.ReservationID, payment.PaymentID);
 
                         // Release associated rooms
-                        // (available status is not updating)
                         var reservedRooms = reservation.ReservedRooms;
                         if (reservedRooms != null && reservedRooms.Any())
                         {
@@ -212,7 +210,8 @@ namespace Application.Features.ManageReservations.ApproveDocument
             {
                 await unitOfWork.RollbackTransactionAsync(cancellationToken);
                 logger.Error(e, "Error processing document approval");
-                return Result<PaymentInitiationResponse>.Failure(new Error("An error occurred while processing the request."));
+                return Result<PaymentInitiationResponse>.Failure(
+                    new Error("An error occurred while processing the request."));
             }
         }
 

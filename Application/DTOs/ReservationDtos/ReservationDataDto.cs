@@ -44,6 +44,7 @@
     // reservation payment details
     public class PaymentDto
     {
+        public Guid paymentId { get; set; }
         public string OrderID { get; set; }
         public string Method { get; set; }
         public decimal? AmountPaid { get; set; }
