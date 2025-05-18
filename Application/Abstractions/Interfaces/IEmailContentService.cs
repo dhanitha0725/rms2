@@ -17,5 +17,11 @@
         Task<string> GenerateCashPaymentInstructionsEmailBodyAsync(
             int reservationId,
             CancellationToken cancellationToken);
+
+        Task<string> GeneratePaymentEmailAsync(
+            int reservationId,
+            string email,
+            string paymentLink,
+            CancellationToken cancellationToken);
     }
 }

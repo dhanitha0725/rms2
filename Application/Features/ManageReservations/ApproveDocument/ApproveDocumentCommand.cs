@@ -9,5 +9,6 @@ namespace Application.Features.ManageReservations.ApproveDocument
         public string DocumentType { get; set; }
         public decimal? AmountPaid { get; set; }
         public bool IsApproved { get; set; }
+        public string OrderId { get; set; }
     }
 }

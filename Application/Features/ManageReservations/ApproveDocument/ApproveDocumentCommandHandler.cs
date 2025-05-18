@@ -3,6 +3,8 @@ using Domain.Common;
 using Domain.Entities;
 using Domain.Enums;
 using MediatR;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 namespace Application.Features.ManageReservations.ApproveDocument
@@ -12,7 +14,12 @@ namespace Application.Features.ManageReservations.ApproveDocument
             IGenericRepository<Payment, Guid> paymentRepository,
             IGenericRepository<Document, int> documentRepository,
             IGenericRepository<Room, int> roomRepository,
+            IGenericRepository<ReservationUserDetail, int> reservationUserRepository,
             IUnitOfWork unitOfWork,
+            IBackgroundTaskQueue backgroundTaskQueue,
+            IServiceScopeFactory serviceScopeFactory,
+            IEmailContentService emailContentService,
+            IConfiguration configuration,
             ILogger logger)
             : IRequestHandler<ApproveDocumentCommand, Result>
     {
@@ -47,6 +54,40 @@ namespace Application.Features.ManageReservations.ApproveDocument
                         reservation.UpdatedDate = DateTime.UtcNow;
                         await reservationRepository.UpdateAsync(reservation, cancellationToken);
                         logger.Information("Reservation {ReservationId} status updated to PendingPayment after document approval.", reservation.ReservationID);
+
+                        // receive reservation user details
+                        var reservationUserDetail = await reservationUserRepository.GetByIdAsync(
+                            (await reservationUserRepository.GetAllAsync(cancellationToken))
+                            .FirstOrDefault(ud => ud.ReservationID == reservation.ReservationID)?.ReservationUserDetailID ?? 0,
+                            cancellationToken);
+
+                        if (reservationUserDetail == null)
+                        {
+                            return Result.Failure(new Error("Reservation user details not found"));
+                        }
+
+                        // create payment record
+                        var payment = new Payment
+                        {
+                            OrderID = request.OrderId,
+                            AmountPaid = reservation.Total,
+                            Currency = "LKR",
+                            CreatedDate = DateTime.UtcNow,
+                            Status = "Pending",
+                            Method = nameof(PaymentMethods.Online),
+                            ReservationID = reservation.ReservationID,
+                            ReservationUserID = reservationUserDetail.ReservationUserDetailID,
+                        };
+
+                        await paymentRepository.AddAsync(payment, cancellationToken);
+                        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+                        // generate payment link
+                        var baseUrl = configuration["PayhereSettings:BaseUrl"]; ;
+                        var paymentLink = $"{baseUrl}/api/payments/initiate?orderId=";
+
+                        // schedule email
+                        SchedulePaymentEmail(reservation.ReservationID, reservationUserDetail.Email, paymentLink);
                     }
                     // Handle BankReceipt
                     else if (request.DocumentType == nameof(DocumentType.BankReceipt))
@@ -164,6 +205,35 @@ namespace Application.Features.ManageReservations.ApproveDocument
                 logger.Error(e, "Error processing document approval");
                 return Result.Failure(new Error("An error occurred while processing the request."));
             }
+        }
+
+        private void SchedulePaymentEmail(int reservationId, string email, string paymentLink)
+        {
+            // Queue background task to send email
+            backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                var emailContentService = scope.ServiceProvider.GetRequiredService<IEmailContentService>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+                logger.Information("Sending payment confirmation email for reservation {ReservationId}.", reservationId);
+                try
+                {
+                    // Send email
+                    var emailBody = await emailContentService.GeneratePaymentEmailAsync(reservationId, email, paymentLink, cancellationToken);
+                    await emailService.SendEmailAsync(
+                        email, 
+                        "Reservation Approved - Complete Payment", 
+                        emailBody);
+                    logger.Information("Approval email with payment link sent for reservation {ReservationId}", reservationId);
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, "Error sending payment confirmation email to {Email}.", email);
+                }
+
+                logger.Information("Scheduled approval email for reservation {ReservationId}.", reservationId);
+            });
         }
     }
 }
