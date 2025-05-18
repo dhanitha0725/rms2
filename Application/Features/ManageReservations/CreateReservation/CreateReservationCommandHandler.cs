@@ -202,7 +202,7 @@ namespace Application.Features.ManageReservations.CreateReservation
             backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
             {
                 // Wait for 30 minutes
-                await Task.Delay(TimeSpan.FromMinutes(30), cancellationToken);
+                await Task.Delay(TimeSpan.FromMinutes(2), cancellationToken);
 
                 // Create the expiration task
                 var expireTask = new ExpireReservationTask(
@@ -212,6 +212,7 @@ namespace Application.Features.ManageReservations.CreateReservation
 
                 // Execute the task
                 await expireTask.Execute(cancellationToken);
+                logger.Information("Reservation expired: Reservation Id: {ReservationId}", reservationId);
             });
 
             logger.Information("Scheduled expiration for reservation {ReservationId} in 30 minutes.", reservationId);

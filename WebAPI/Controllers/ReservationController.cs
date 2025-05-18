@@ -106,15 +106,15 @@ namespace WebAPI.Controllers
         }
 
         // Approve document (reservation + payment)
-        [HttpPost("approve-document")]
-        public async Task<IActionResult> ApproveDocument([FromBody] ApproveDocumentCommand command)
-        {
-            var result = await mediator.Send(command);
-            if (!result.IsSuccess)
-            {
-                return BadRequest(result.Error);
-            }
-            return Ok(result);
-        }
+        //[HttpPost("approve-document")]
+        //public async Task<IActionResult> ApproveDocument([FromBody] ApproveDocumentCommand command)
+        //{
+        //    var result = await mediator.Send(command);
+        //    if (!result.IsSuccess)
+        //    {
+        //        return BadRequest(result.Error);
+        //    }
+        //    return Ok(result);
+        //}
     }
 }

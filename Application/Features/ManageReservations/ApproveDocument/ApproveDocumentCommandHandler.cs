@@ -1,4 +1,5 @@
 ﻿using Application.Abstractions.Interfaces;
+using Application.DTOs.Payment;
 using Domain.Common;
 using Domain.Entities;
 using Domain.Enums;
@@ -21,9 +22,9 @@ namespace Application.Features.ManageReservations.ApproveDocument
             IEmailContentService emailContentService,
             IConfiguration configuration,
             ILogger logger)
-            : IRequestHandler<ApproveDocumentCommand, Result>
+            : IRequestHandler<ApproveDocumentCommand, Result<PaymentInitiationResponse>>
     {
-        public async Task<Result> Handle(
+        public async Task<Result<PaymentInitiationResponse>> Handle(
             ApproveDocumentCommand request,
             CancellationToken cancellationToken)
         {
@@ -33,7 +34,7 @@ namespace Application.Features.ManageReservations.ApproveDocument
                 // Retrieve the document
                 var document = await documentRepository.GetByIdAsync(request.DocumentId, cancellationToken);
                 if (document == null)
-                    return Result.Failure(new Error("Document Not Found"));
+                    return Result<PaymentInitiationResponse>.Failure(new Error("Document Not Found"));
 
                 if (request.IsApproved)
                 {
@@ -41,15 +42,16 @@ namespace Application.Features.ManageReservations.ApproveDocument
                     if (request.DocumentType == nameof(DocumentType.ApprovalDocument))
                     {
                         if (document.ReservationId == null)
-                            return Result.Failure(new Error("Document is not associated with a reservation."));
+                            return Result<PaymentInitiationResponse>.Failure(new Error("Document is not associated with a reservation."));
 
                         var reservation = await reservationRepository.GetByIdAsync(document.ReservationId.Value, cancellationToken);
                         if (reservation == null)
-                            return Result.Failure(new Error("Reservation not found"));
+                            return Result<PaymentInitiationResponse>.Failure(new Error("Reservation not found"));
 
                         if (reservation.Status != ReservationStatus.PendingApproval)
-                            return Result.Failure(new Error("Reservation is not in PendingApproval status."));
+                            return Result<PaymentInitiationResponse>.Failure(new Error("Reservation is not in PendingApproval status."));
 
+                        // Update reservation status to PendingPayment
                         reservation.Status = ReservationStatus.PendingPayment;
                         reservation.UpdatedDate = DateTime.UtcNow;
                         await reservationRepository.UpdateAsync(reservation, cancellationToken);
@@ -63,14 +65,14 @@ namespace Application.Features.ManageReservations.ApproveDocument
 
                         if (reservationUserDetail == null)
                         {
-                            return Result.Failure(new Error("Reservation user details not found"));
+                            return Result<PaymentInitiationResponse>.Failure(new Error("Reservation user details not found"));
                         }
 
                         // create payment record
                         var payment = new Payment
                         {
                             OrderID = request.OrderId,
-                            AmountPaid = reservation.Total,
+                            AmountPaid = reservation.Total > 0 ? request.Amount : reservation.Total,
                             Currency = "LKR",
                             CreatedDate = DateTime.UtcNow,
                             Status = "Pending",
@@ -83,8 +85,8 @@ namespace Application.Features.ManageReservations.ApproveDocument
                         await unitOfWork.SaveChangesAsync(cancellationToken);
 
                         // generate payment link
-                        var baseUrl = configuration["PayhereSettings:BaseUrl"]; ;
-                        var paymentLink = $"{baseUrl}/api/payments/initiate?orderId=";
+                        var baseUrl = configuration["Application:FrontendBaseUrl"];
+                        var paymentLink = $"{baseUrl}/payment-initiate?orderId={Uri.EscapeDataString(request.OrderId)}";
 
                         // schedule email
                         SchedulePaymentEmail(reservation.ReservationID, reservationUserDetail.Email, paymentLink);
@@ -93,20 +95,20 @@ namespace Application.Features.ManageReservations.ApproveDocument
                     else if (request.DocumentType == nameof(DocumentType.BankReceipt))
                     {
                         if (document.PaymentId == null)
-                            return Result.Failure(new Error("Document is not associated with a payment."));
+                            return Result<PaymentInitiationResponse>.Failure(new Error("Document is not associated with a payment."));
 
                         var payment = await paymentRepository.GetByIdAsync(document.PaymentId.Value, cancellationToken);
                         if (payment == null)
-                            return Result.Failure(new Error("Payment not found."));
+                            return Result<PaymentInitiationResponse>.Failure(new Error("Payment not found."));
 
                         var reservation = await reservationRepository.GetByIdAsync(payment.ReservationID, cancellationToken);
                         if (reservation == null)
-                            return Result.Failure(new Error("Reservation not found."));
+                            return Result<PaymentInitiationResponse>.Failure(new Error("Reservation not found."));
 
                         if (reservation.Status != ReservationStatus.PendingPaymentVerification)
-                            return Result.Failure(new Error("Reservation is not in PendingPaymentVerification status."));
+                            return Result<PaymentInitiationResponse>.Failure(new Error("Reservation is not in PendingPaymentVerification status."));
 
-                        payment.AmountPaid = request.AmountPaid;
+                        payment.AmountPaid = (decimal)request.AmountPaid!;
                         payment.Status = "Completed";
                         await paymentRepository.UpdateAsync(payment, cancellationToken);
                         logger.Information("Payment {PaymentId} status updated to Completed after document approval.", payment.PaymentID);
@@ -118,7 +120,7 @@ namespace Application.Features.ManageReservations.ApproveDocument
                     }
                     else
                     {
-                        return Result.Failure(new Error("Invalid Document Type"));
+                        return Result<PaymentInitiationResponse>.Failure(new Error("Invalid Document Type"));
                     }
                 }
                 else
@@ -127,15 +129,15 @@ namespace Application.Features.ManageReservations.ApproveDocument
                     if (request.DocumentType == nameof(DocumentType.BankReceipt))
                     {
                         if (document.PaymentId == null)
-                            return Result.Failure(new Error("Document is not associated with a payment."));
+                            return Result<PaymentInitiationResponse>.Failure(new Error("Document is not associated with a payment."));
 
                         var payment = await paymentRepository.GetByIdAsync(document.PaymentId.Value, cancellationToken);
                         if (payment == null)
-                            return Result.Failure(new Error("Payment not found."));
+                            return Result<PaymentInitiationResponse>.Failure(new Error("Payment not found."));
 
                         var reservation = await reservationRepository.GetByIdAsync(payment.ReservationID, cancellationToken);
                         if (reservation == null)
-                            return Result.Failure(new Error("Reservation not found."));
+                            return Result<PaymentInitiationResponse>.Failure(new Error("Reservation not found."));
 
                         payment.Status = "Cancelled";
                         await paymentRepository.UpdateAsync(payment, cancellationToken);
@@ -148,7 +150,7 @@ namespace Application.Features.ManageReservations.ApproveDocument
                         // Release associated rooms
                         // (available status is not updating)
                         var reservedRooms = reservation.ReservedRooms;
-                        if (reservedRooms != null)
+                        if (reservedRooms != null && reservedRooms.Any())
                         {
                             foreach (var reservedRoom in reservedRooms)
                             {
@@ -158,6 +160,11 @@ namespace Application.Features.ManageReservations.ApproveDocument
                                     room.Status = "Available";
                                     await roomRepository.UpdateAsync(room, cancellationToken);
                                     logger.Information("Room {RoomId} status updated to Available after reservation cancellation.", room.RoomID);
+                                }
+                                else
+                                {
+                                    logger.Warning("Room {RoomId} not found for reservation {ReservationId}.",
+                                        reservedRoom.RoomID, reservation.ReservationID);
                                 }
                             }
                         }
@@ -197,13 +204,15 @@ namespace Application.Features.ManageReservations.ApproveDocument
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
 
-                return Result.Success([]);
+                logger.Information("{PaymentInitiationResponse}", new PaymentInitiationResponse());
+                return Result<PaymentInitiationResponse>.Success(new PaymentInitiationResponse());
+           
             }
             catch (Exception e)
             {
                 await unitOfWork.RollbackTransactionAsync(cancellationToken);
                 logger.Error(e, "Error processing document approval");
-                return Result.Failure(new Error("An error occurred while processing the request."));
+                return Result<PaymentInitiationResponse>.Failure(new Error("An error occurred while processing the request."));
             }
         }
 
@@ -216,14 +225,18 @@ namespace Application.Features.ManageReservations.ApproveDocument
                 var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
                 var emailContentService = scope.ServiceProvider.GetRequiredService<IEmailContentService>();
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
-                logger.Information("Sending payment confirmation email for reservation {ReservationId}.", reservationId);
+                logger.Information("Starting approval email task for reservation {ReservationId}.", reservationId);
                 try
                 {
                     // Send email
-                    var emailBody = await emailContentService.GeneratePaymentEmailAsync(reservationId, email, paymentLink, cancellationToken);
+                    var emailBody = await emailContentService.GeneratePaymentEmailAsync(
+                        reservationId,
+                        email,
+                        paymentLink,
+                        cancellationToken);
                     await emailService.SendEmailAsync(
-                        email, 
-                        "Reservation Approved - Complete Payment", 
+                        email,
+                        "Reservation Approved - Complete Payment",
                         emailBody);
                     logger.Information("Approval email with payment link sent for reservation {ReservationId}", reservationId);
                 }
