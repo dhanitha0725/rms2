@@ -9,5 +9,13 @@
         Task<string> GeneratePaymentConfirmationEmailBodyAsync(
             int reservationId,
             CancellationToken cancellationToken);
+
+        Task<string> GenerateBankTransferInstructionsEmailBodyAsync(
+            int reservationId,
+            CancellationToken cancellationToken);
+
+        Task<string> GenerateCashPaymentInstructionsEmailBodyAsync(
+            int reservationId,
+            CancellationToken cancellationToken);
     }
 }

@@ -166,6 +166,11 @@ namespace Application.Features.ManageReservations.CreateReservation
                 else if (status == ReservationStatus.PendingCashPayment)
                 {
                     ScheduleReservationExpirationForCashPayments(reservation.ReservationID);
+                    ScheduleCashPaymentInstructions(reservation.ReservationID, reservationUserDetails.Email);
+                }
+                else if (status == ReservationStatus.PendingPaymentVerification)
+                {
+                    ScheduleBankTransferInstructions(reservation.ReservationID, reservationUserDetails.Email);
                 }
                 else if (status == ReservationStatus.PendingApproval)
                 {
@@ -275,6 +280,52 @@ namespace Application.Features.ManageReservations.CreateReservation
                 }
             });
             logger.Information("Scheduled pending approval notification for reservation {ReservationId}.", reservationId);
+        }
+
+        private void ScheduleBankTransferInstructions(int reservationId, string email)
+        {
+            backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+
+                try
+                {
+                    var emailBody = await emailContentService.GenerateBankTransferInstructionsEmailBodyAsync(reservationId, cancellationToken);
+                    await emailService.SendEmailAsync(email, "Bank Transfer Instructions", emailBody);
+                    logger.Information("Bank transfer instructions sent for reservation {ReservationId}.", reservationId);
+                }
+                catch (Exception e)
+                {
+                    logger.Error(e, "Error sending bank transfer instructions for reservation {ReservationId}.", reservationId);
+                    throw;
+                }
+            });
+            logger.Information("Scheduled bank transfer instructions for reservation {ReservationId}.", reservationId);
+        }
+
+        private void ScheduleCashPaymentInstructions(int reservationId, string email)
+        {
+            backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+
+                try
+                {
+                    var emailBody = await emailContentService.GenerateCashPaymentInstructionsEmailBodyAsync(reservationId, cancellationToken);
+                    await emailService.SendEmailAsync(email, "Cash Payment Instructions", emailBody);
+                    logger.Information("Cash payment instructions sent for reservation {ReservationId}.", reservationId);
+                }
+                catch (Exception e)
+                {
+                    logger.Error(e, "Error sending cash payment instructions for reservation {ReservationId}.", reservationId);
+                    throw;
+                }
+            });
+            logger.Information("Scheduled cash payment instructions for reservation {ReservationId}.", reservationId);
         }
     }
 }

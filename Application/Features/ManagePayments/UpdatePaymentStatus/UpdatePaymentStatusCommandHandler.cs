@@ -102,13 +102,15 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
                 await reservationRepository.UpdateAsync(reservation, cancellationToken);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
 
+                await unitOfWork.CommitTransactionAsync(cancellationToken);
+
                 // If payment is completed, send confirmation email
                 if (payment.Status == "Completed")
                 {
+                    logger.Information("Email is sending");
                     SchedulePaymentConfirmationEmail(reservation.ReservationID, payment.ReservationUserID);
+                    logger.Information("Email sent");
                 }
-
-                await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 logger.Information("Payment Status Updated: {PaymentId}, Status: {Status}",
                     request.PaymentId, payment.Status);
@@ -131,6 +133,9 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
                 var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
                 var userRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<ReservationUserDetail, int>>();
+                var emailContentService = scope.ServiceProvider.GetRequiredService<IEmailContentService>();
+
+                logger.Information("Sending payment confirmation email for reservation {ReservationId}.", reservationId);
 
                 try
                 {
