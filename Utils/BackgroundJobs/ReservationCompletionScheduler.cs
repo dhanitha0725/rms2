@@ -11,7 +11,7 @@ namespace Utilities.BackgroundJobs
         private readonly IBackgroundTaskQueue _queue;
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger _logger;
-        private Timer _timer; // Private field to hold the Timer instance
+        private Timer _timer;
 
         public ReservationCompletionScheduler(
             IBackgroundTaskQueue queue,
@@ -42,7 +42,7 @@ namespace Utilities.BackgroundJobs
         {
             _logger.Information("Stopping reservation completion scheduler.");
             _timer?.Change(Timeout.Infinite, 0); // Stop the timer
-            _timer?.Dispose();                   // Dispose of the timer
+            _timer?.Dispose();
             return Task.CompletedTask;
         }
 
@@ -54,7 +54,7 @@ namespace Utilities.BackgroundJobs
                 var task = scope.ServiceProvider.GetRequiredService<ReservationCompletionTask>();
                 await task.Execute(cancellationToken);
             });
-            _logger.Information("reservation completion task done.");
+            _logger.Information("Scheduled reservation completion task.");
         }
     }
 }

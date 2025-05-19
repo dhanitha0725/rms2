@@ -26,7 +26,7 @@ namespace Application.EventHandlers
 
                 try
                 {
-                    // Fetch reservations that need to be completed (only confirmed reservations)
+                    // Handle confirmed reservations past end date
                     var reservationsToComplete = await reservationRepository.GetAllAsync(
                         r => r.EndDate < now && r.Status == ReservationStatus.Confirmed,
                         cancellationToken);
@@ -65,6 +65,44 @@ namespace Application.EventHandlers
                             throw;
                         }
                     }
+
+                    // Release rooms for already expired or cancelled reservations
+                    var expiredOrCancelledReservations = await reservationRepository.GetAllAsync(
+                        r => r.Status == ReservationStatus.Expired || r.Status == ReservationStatus.Cancelled,
+                        cancellationToken);
+
+                    foreach (var reservation in expiredOrCancelledReservations)
+                    {
+                        try
+                        {
+                            // find rooms that are still marked as reserved for reservation
+                            var reservedRooms = await roomRepository.GetAllAsync(
+                                room => room.ReservedRooms.Any(rr => rr.ReservationID == reservation.ReservationID) &&
+                                        room.Status != "Available",
+                                cancellationToken);
+
+                            if (reservedRooms.Any())
+                            {
+                                foreach (var room in reservedRooms)
+                                {
+                                    room.Status = "Available";
+                                    await roomRepository.UpdateAsync(room, cancellationToken);
+                                    logger.Information("Room {RoomId} status updated to Available for {Status} reservation {ReservationId}.",
+                                        room.RoomID, reservation.Status, reservation.ReservationID);
+                                }
+
+                                logger.Information("Released {Count} rooms for {Status} reservation {ReservationId}.",
+                                    reservedRooms.Count(), reservation.Status, reservation.ReservationID);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.Error(ex, "Error releasing rooms for {Status} reservation {ReservationId}.",
+                                reservation.Status, reservation.ReservationID);
+                            throw;
+                        }
+                    }
+
                     await unitOfWork.SaveChangesAsync(cancellationToken);
                     await unitOfWork.CommitTransactionAsync(cancellationToken);
                 }
