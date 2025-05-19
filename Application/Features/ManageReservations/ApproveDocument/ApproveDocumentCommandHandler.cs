@@ -16,6 +16,7 @@ namespace Application.Features.ManageReservations.ApproveDocument
             IGenericRepository<Document, int> documentRepository,
             IGenericRepository<Room, int> roomRepository,
             IGenericRepository<ReservationUserDetail, int> reservationUserRepository,
+            IGenericRepository<ReservedRoom, int> reservedRoomRepository,
             IUnitOfWork unitOfWork,
             IBackgroundTaskQueue backgroundTaskQueue,
             IServiceScopeFactory serviceScopeFactory,
@@ -107,7 +108,12 @@ namespace Application.Features.ManageReservations.ApproveDocument
                         if (reservation.Status != ReservationStatus.PendingPaymentVerification)
                             return Result<PaymentInitiationResponse>.Failure(new Error("Reservation is not in PendingPaymentVerification status."));
 
-                        payment.AmountPaid = (decimal)request.AmountPaid!;
+                        if (request.AmountPaid == null)
+                        {
+                            return Result<PaymentInitiationResponse>.Failure(new Error("Amount paid is required when approving bank receipt."));
+                        }
+
+                        payment.AmountPaid = request.AmountPaid.Value;
                         payment.Status = "Completed";
                         await paymentRepository.UpdateAsync(payment, cancellationToken);
                         logger.Information("Payment {PaymentId} status updated to Completed after document approval.", payment.PaymentID);
@@ -116,6 +122,9 @@ namespace Application.Features.ManageReservations.ApproveDocument
                         reservation.UpdatedDate = DateTime.UtcNow;
                         await reservationRepository.UpdateAsync(reservation, cancellationToken);
                         logger.Information("Reservation {ReservationId} status updated to Confirmed after payment completion.", reservation.ReservationID);
+
+                        // Add confirmation email scheduling here if needed
+                        SchedulePaymentConfirmationEmail(reservation.ReservationID, payment.ReservationUserID);
                     }
                     else
                     {
@@ -146,29 +155,12 @@ namespace Application.Features.ManageReservations.ApproveDocument
                         await reservationRepository.UpdateAsync(reservation, cancellationToken);
                         logger.Information("Reservation {ReservationId} and Payment {PaymentId} status updated to Cancelled after bank receipt rejection.", reservation.ReservationID, payment.PaymentID);
 
-                        // Release associated rooms
-                        var reservedRooms = reservation.ReservedRooms;
-                        if (reservedRooms != null && reservedRooms.Any())
-                        {
-                            foreach (var reservedRoom in reservedRooms)
-                            {
-                                var room = await roomRepository.GetByIdAsync(reservedRoom.RoomID, cancellationToken);
-                                if (room != null)
-                                {
-                                    room.Status = "Available";
-                                    await roomRepository.UpdateAsync(room, cancellationToken);
-                                    logger.Information("Room {RoomId} status updated to Available after reservation cancellation.", room.RoomID);
-                                }
-                                else
-                                {
-                                    logger.Warning("Room {RoomId} not found for reservation {ReservationId}.",
-                                        reservedRoom.RoomID, reservation.ReservationID);
-                                }
-                            }
-                        }
+                        // Release rooms using the helper method
+                        await ReleaseRoomsForReservationAsync(reservation.ReservationID, cancellationToken);
                     }
                     else
                     {
+
                         if (document.ReservationId != null)
                         {
                             var reservation = await reservationRepository.GetByIdAsync(document.ReservationId.Value, cancellationToken);
@@ -179,21 +171,8 @@ namespace Application.Features.ManageReservations.ApproveDocument
                                 await reservationRepository.UpdateAsync(reservation, cancellationToken);
                                 logger.Information("Reservation {ReservationId} status updated to Cancelled after document rejection.", reservation.ReservationID);
 
-                                // Release associated rooms
-                                var reservedRooms = reservation.ReservedRooms;
-                                if (reservedRooms != null)
-                                {
-                                    foreach (var reservedRoom in reservedRooms)
-                                    {
-                                        var room = await roomRepository.GetByIdAsync(reservedRoom.RoomID, cancellationToken);
-                                        if (room != null)
-                                        {
-                                            room.Status = "Available";
-                                            await roomRepository.UpdateAsync(room, cancellationToken);
-                                            logger.Information("Room {RoomId} status updated to Available after reservation cancellation.", room.RoomID);
-                                        }
-                                    }
-                                }
+                                // Release rooms using the helper method
+                                await ReleaseRoomsForReservationAsync(reservation.ReservationID, cancellationToken);
                             }
                         }
                     }
@@ -204,7 +183,7 @@ namespace Application.Features.ManageReservations.ApproveDocument
 
                 logger.Information("{PaymentInitiationResponse}", new PaymentInitiationResponse());
                 return Result<PaymentInitiationResponse>.Success(new PaymentInitiationResponse());
-           
+
             }
             catch (Exception e)
             {
@@ -212,6 +191,38 @@ namespace Application.Features.ManageReservations.ApproveDocument
                 logger.Error(e, "Error processing document approval");
                 return Result<PaymentInitiationResponse>.Failure(
                     new Error("An error occurred while processing the request."));
+            }
+        }
+
+        // Helper method to release rooms for a reservation
+        private async Task ReleaseRoomsForReservationAsync(int reservationId, CancellationToken cancellationToken)
+        {
+            // Get all reserved rooms for this reservation
+            var reservedRooms = await reservedRoomRepository.GetAllAsync(
+                rr => rr.ReservationID == reservationId,
+                cancellationToken);
+
+            if (reservedRooms == null || !reservedRooms.Any())
+            {
+                logger.Warning("No reserved rooms found for reservation {ReservationId}.", reservationId);
+                return;
+            }
+
+            // Update each room status to Available
+            foreach (var reservedRoom in reservedRooms)
+            {
+                var room = await roomRepository.GetByIdAsync(reservedRoom.RoomID, cancellationToken);
+                if (room != null)
+                {
+                    room.Status = "Available";
+                    await roomRepository.UpdateAsync(room, cancellationToken);
+                    logger.Information("Room {RoomId} status updated to Available after reservation cancellation.", room.RoomID);
+                }
+                else
+                {
+                    logger.Warning("Room {RoomId} not found for reservation {ReservationId}.",
+                        reservedRoom.RoomID, reservationId);
+                }
             }
         }
 
@@ -246,6 +257,43 @@ namespace Application.Features.ManageReservations.ApproveDocument
 
                 logger.Information("Scheduled approval email for reservation {ReservationId}.", reservationId);
             });
+        }
+
+        private void SchedulePaymentConfirmationEmail(int reservationId, int reservationUserId)
+        {
+            // Queue background task to send email
+            backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+                var userRepository = scope.ServiceProvider.GetRequiredService<IGenericRepository<ReservationUserDetail, int>>();
+                var emailContentService = scope.ServiceProvider.GetRequiredService<IEmailContentService>();
+
+                logger.Information("Sending payment confirmation email for reservation {ReservationId}.", reservationId);
+
+                try
+                {
+                    // Get user email
+                    var user = await userRepository.GetByIdAsync(reservationUserId, cancellationToken);
+                    if (user == null || string.IsNullOrEmpty(user.Email))
+                    {
+                        logger.Warning("User not found or email missing for ReservationUserID: {UserId}", reservationUserId);
+                        return;
+                    }
+
+                    // Generate and send email
+                    var emailBody = await emailContentService.GeneratePaymentConfirmationEmailBodyAsync(reservationId, cancellationToken);
+                    await emailService.SendEmailAsync(user.Email, "Payment Confirmation", emailBody);
+                    logger.Information("Payment confirmation email sent for reservation {ReservationId}.", reservationId);
+                }
+                catch (Exception e)
+                {
+                    logger.Error(e, "Error sending payment confirmation email for reservation {ReservationId}.", reservationId);
+                }
+            });
+
+            logger.Information("Scheduled payment confirmation email for reservation {ReservationId}.", reservationId);
         }
     }
 }
