@@ -157,10 +157,17 @@ namespace Application.Features.ManageReservations.ApproveDocument
 
                         // Release rooms using the helper method
                         await ReleaseRoomsForReservationAsync(reservation.ReservationID, cancellationToken);
+
+                        // Get user email and send cancellation notification
+                        var user = await reservationUserRepository.GetByIdAsync(payment.ReservationUserID, cancellationToken);
+                        if (user != null && !string.IsNullOrEmpty(user.Email))
+                        {
+                            ScheduleCancellationEmail(reservation.ReservationID, user.Email);
+                            logger.Information("Cancellation email scheduled for reservation {ReservationId}.", reservation.ReservationID);
+                        }
                     }
                     else
                     {
-
                         if (document.ReservationId != null)
                         {
                             var reservation = await reservationRepository.GetByIdAsync(document.ReservationId.Value, cancellationToken);
@@ -173,6 +180,18 @@ namespace Application.Features.ManageReservations.ApproveDocument
 
                                 // Release rooms using the helper method
                                 await ReleaseRoomsForReservationAsync(reservation.ReservationID, cancellationToken);
+
+                                // Find user associated with this reservation to send cancellation email
+                                var reservationUserDetail = await reservationUserRepository.GetByIdAsync(
+                                    (await reservationUserRepository.GetAllAsync(cancellationToken))
+                                    .FirstOrDefault(ud => ud.ReservationID == reservation.ReservationID)?.ReservationUserDetailID ?? 0,
+                                    cancellationToken);
+
+                                if (reservationUserDetail != null && !string.IsNullOrEmpty(reservationUserDetail.Email))
+                                {
+                                    ScheduleCancellationEmail(reservation.ReservationID, reservationUserDetail.Email);
+                                    logger.Information("Cancellation email scheduled for reservation {ReservationId}.", reservation.ReservationID);
+                                }
                             }
                         }
                     }
@@ -294,6 +313,38 @@ namespace Application.Features.ManageReservations.ApproveDocument
             });
 
             logger.Information("Scheduled payment confirmation email for reservation {ReservationId}.", reservationId);
+        }
+
+        private void ScheduleCancellationEmail(int reservationId, string email)
+        {
+            // Queue background task to send email
+            backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                var emailContentService = scope.ServiceProvider.GetRequiredService<IEmailContentService>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+                logger.Information("Starting cancellation email task for reservation {ReservationId}.", reservationId);
+                try
+                {
+                    // Send email
+                    var emailBody = await emailContentService.GenerateReservationCancellationEmailAsync(
+                        reservationId,
+                        email,
+                        cancellationToken);
+                    await emailService.SendEmailAsync(
+                        email,
+                        "Reservation Cancelled",
+                        emailBody);
+                    logger.Information("Cancellation email sent for reservation {ReservationId}", reservationId);
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, "Error sending cancellation email to {Email}.", email);
+                }
+
+                logger.Information("Scheduled cancellation email for reservation {ReservationId}.", reservationId);
+            });
         }
     }
 }

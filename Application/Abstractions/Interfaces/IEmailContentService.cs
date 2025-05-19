@@ -23,5 +23,10 @@
             string email,
             string paymentLink,
             CancellationToken cancellationToken);
+
+        Task<string> GenerateReservationCancellationEmailAsync(
+            int reservationId,
+            string email,
+            CancellationToken cancellationToken);
     }
 }

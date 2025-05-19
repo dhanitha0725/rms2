@@ -70,6 +70,7 @@ public class ConfirmCashPaymentCommandHandler(
             await reservationRepository.UpdateAsync(reservation, cancellationToken);
             logger.Information("Reservation {ReservationId} status updated to Confirmed after cash payment confirmation.", reservation.ReservationID);
 
+
             await unitOfWork.SaveChangesAsync(cancellationToken);
             await unitOfWork.CommitTransactionAsync(cancellationToken);
 

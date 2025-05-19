@@ -453,5 +453,44 @@ namespace Application.Services
 
             return GetEmailWrapper("Reservation Approved - Complete Payment", content);
         }
+
+        public async Task<string> GenerateReservationCancellationEmailAsync(
+            int reservationId,
+            string email,
+
+            CancellationToken cancellationToken)
+        {
+            var reservation = await reservationRepository.GetByIdAsync(reservationId, cancellationToken);
+            if (reservation == null)
+            {
+                throw new InvalidOperationException($"Reservation not found for ID: {reservationId}");
+            }
+
+            var (startDate, endDate, totalAmount) = FormatReservationDetails(reservation);
+
+            var content = $"""
+                           {GetReservationIdSection(reservation.ReservationID)}
+                           
+                           <p>Dear Guest,</p>
+                           
+                           <div class="message-box" style="background-color: #ffebee; border-left: 4px solid #d32f2f; padding: 15px; margin: 20px 0; border-radius: 0 5px 5px 0;">
+                               <p><strong>Your reservation has been cancelled.</strong></p>
+                               <p>This could be due to one of the following reasons:</p>
+                               <ul style="margin-top: 10px; margin-bottom: 10px; padding-left: 20px;">
+                                   <li>Payment was not received within the specified timeframe</li>
+                                   <li>The reservation was cancelled at your request</li>
+                                   <li>Required documentation was not approved</li>
+                               </ul>
+                           </div>
+                           
+                           {GetReservationDetailsSectionWithStatus(startDate, endDate, "Cancelled")}
+                           
+                           {GetTotalAmountSection(totalAmount, "Total Amount")}
+                           
+                           {GetThankYouSection()}
+                           """;
+
+            return GetEmailWrapper("Reservation Cancelled", content);
+        }
     }
 }
