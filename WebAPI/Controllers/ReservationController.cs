@@ -2,6 +2,7 @@
 using Application.Features.ManageFacility.SelectedFacilityDetails;
 using Application.Features.ManageReservations.ApproveDocument;
 using Application.Features.ManageReservations.CalculateTotal;
+using Application.Features.ManageReservations.CancelReservation;
 using Application.Features.ManageReservations.CheckAvailability;
 using Application.Features.ManageReservations.CreateReservation;
 using Application.Features.ManageReservations.GetReservationDetails;
@@ -14,7 +15,7 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ReservationController(IMediator mediator  ) : ControllerBase
+    public class ReservationController(IMediator mediator) : ControllerBase
     {
         [HttpPost("checkAvailability")]
         public async Task<IActionResult> CheckAvailability([FromBody] CheckAvailabilityDto dto)
@@ -105,16 +106,15 @@ namespace WebAPI.Controllers
             return Ok(result.Value);
         }
 
-        // Approve document (reservation + payment)
-        //[HttpPost("approve-document")]
-        //public async Task<IActionResult> ApproveDocument([FromBody] ApproveDocumentCommand command)
-        //{
-        //    var result = await mediator.Send(command);
-        //    if (!result.IsSuccess)
-        //    {
-        //        return BadRequest(result.Error);
-        //    }
-        //    return Ok(result);
-        //}
+        [HttpPost("cancel-reservation")]
+        public async Task<IActionResult> CancelReservation([FromBody] CancelReservationCommand command)
+        {
+            var result = await mediator.Send(command);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.Error);
+            }
+            return Ok(result.Value);
+        }
     }
 }
