@@ -17,6 +17,8 @@ namespace Application.Features.ManageReservations.ApproveDocument
             IGenericRepository<Room, int> roomRepository,
             IGenericRepository<ReservationUserDetail, int> reservationUserRepository,
             IGenericRepository<ReservedRoom, int> reservedRoomRepository,
+            IGenericRepository<Invoice, int> invoiceRepository,
+            IGenericRepository<InvoicePayment, object> invoicePaymentRepository,
             IUnitOfWork unitOfWork,
             IBackgroundTaskQueue backgroundTaskQueue,
             IServiceScopeFactory serviceScopeFactory,
@@ -122,6 +124,30 @@ namespace Application.Features.ManageReservations.ApproveDocument
                         reservation.UpdatedDate = DateTime.UtcNow;
                         await reservationRepository.UpdateAsync(reservation, cancellationToken);
                         logger.Information("Reservation {ReservationId} status updated to Confirmed after payment completion.", reservation.ReservationID);
+
+                        // Create invoice when reservation is confirmed
+                        var invoice = new Invoice
+                        {
+                            ReservationID = reservation.ReservationID,
+                            AmountDue = reservation.Total - payment.AmountPaid ?? 0,
+                            AmountPaid = payment.AmountPaid ?? 0,
+                            IssuedDate = DateTime.UtcNow
+                        };
+
+                        await invoiceRepository.AddAsync(invoice, cancellationToken);
+                        logger.Information("Invoice created for reservation {ReservationId}", reservation.ReservationID);
+
+                        // Link payment to invoice
+                        await unitOfWork.SaveChangesAsync(cancellationToken); // Save to get the invoice ID
+
+                        var invoicePayment = new InvoicePayment
+                        {
+                            InvoiceID = invoice.InvoiceID,
+                            PaymentID = payment.PaymentID
+                        };
+
+                        await invoicePaymentRepository.AddAsync(invoicePayment, cancellationToken);
+                        logger.Information("Payment {PaymentId} linked to invoice {InvoiceId}", payment.PaymentID, invoice.InvoiceID);
 
                         // Add confirmation email scheduling here if needed
                         SchedulePaymentConfirmationEmail(reservation.ReservationID, payment.ReservationUserID);

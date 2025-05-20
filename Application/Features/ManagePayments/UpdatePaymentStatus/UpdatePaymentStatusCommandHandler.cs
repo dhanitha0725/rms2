@@ -18,7 +18,9 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
         IUnitOfWork unitOfWork,
         IEmailContentService emailContentService,
         IBackgroundTaskQueue backgroundTaskQueue,
-        IServiceScopeFactory serviceScopeFactory) :
+        IServiceScopeFactory serviceScopeFactory,
+        IGenericRepository<Invoice, int> invoiceRepository,
+        IGenericRepository<InvoicePayment, int> invoicePaymentRepository) :
         IRequestHandler<UpdatePaymentStatusCommand, Result<Guid>>
     {
         public async Task<Result<Guid>> Handle(
@@ -101,6 +103,40 @@ namespace Application.Features.ManagePayments.UpdatePaymentStatus
                 await paymentRepository.UpdateAsync(payment, cancellationToken);
                 await reservationRepository.UpdateAsync(reservation, cancellationToken);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
+
+                // If payment is completed, create invoice and link payment to invoice
+                if (payment.Status == "Completed")
+                {
+                    // Create invoice for the confirmed reservation
+                    var invoice = new Invoice
+                    {
+                        ReservationID = reservation.ReservationID,
+                        AmountDue = reservation.Total - payment.AmountPaid ?? 0,
+                        AmountPaid = payment.AmountPaid ?? 0,
+                        // Use DateTimeKind.Unspecified to avoid PostgreSQL timestamp type issues
+                        IssuedDate = DateTime.UtcNow
+                    };
+
+                    // Add invoice to repository
+                    await invoiceRepository.AddAsync(invoice, cancellationToken);
+                    logger.Information("Invoice created for reservation {ReservationId}", reservation.ReservationID);
+
+                    // Save changes to get the invoice ID
+                    await unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    // Link payment to invoice
+                    var invoicePayment = new InvoicePayment
+                    {
+                        InvoiceID = invoice.InvoiceID,
+                        PaymentID = payment.PaymentID
+                    };
+
+                    await invoicePaymentRepository.AddAsync(invoicePayment, cancellationToken);
+                    logger.Information("Payment {PaymentId} linked to invoice {InvoiceId}", payment.PaymentID, invoice.InvoiceID);
+
+                    // Save changes again
+                    await unitOfWork.SaveChangesAsync(cancellationToken);
+                }
 
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
 

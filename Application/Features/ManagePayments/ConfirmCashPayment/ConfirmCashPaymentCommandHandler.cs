@@ -11,6 +11,8 @@ namespace Application.Features.ManagePayments.ConfirmCashPayment;
 public class ConfirmCashPaymentCommandHandler(
     IGenericRepository<Payment, Guid> paymentRepository,
     IGenericRepository<Reservation, int> reservationRepository,
+    IGenericRepository<Invoice, int> invoiceRepository,
+    IGenericRepository<InvoicePayment, object> invoicePaymentRepository,
     ILogger logger,
     IUnitOfWork unitOfWork,
     IBackgroundTaskQueue backgroundTaskQueue,
@@ -70,8 +72,32 @@ public class ConfirmCashPaymentCommandHandler(
             await reservationRepository.UpdateAsync(reservation, cancellationToken);
             logger.Information("Reservation {ReservationId} status updated to Confirmed after cash payment confirmation.", reservation.ReservationID);
 
+            // Create invoice for the confirmed reservation
+            var invoice = new Invoice
+            {
+                ReservationID = reservation.ReservationID,
+                AmountDue = reservation.Total - payment.AmountPaid ?? 0,
+                AmountPaid = payment.AmountPaid ?? 0,
+                IssuedDate = DateTime.UtcNow
+            };
 
+            await invoiceRepository.AddAsync(invoice, cancellationToken);
+            logger.Information("Invoice created for reservation {ReservationId}", reservation.ReservationID);
+
+            // Save changes to get the invoice ID
             await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Link payment to invoice
+            var invoicePayment = new InvoicePayment
+            {
+                InvoiceID = invoice.InvoiceID,
+                PaymentID = payment.PaymentID
+            };
+
+            await invoicePaymentRepository.AddAsync(invoicePayment, cancellationToken);
+            logger.Information("Payment {PaymentId} linked to invoice {InvoiceId}", payment.PaymentID, invoice.InvoiceID);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
             await unitOfWork.CommitTransactionAsync(cancellationToken);
 
             // Schedule confirmation email

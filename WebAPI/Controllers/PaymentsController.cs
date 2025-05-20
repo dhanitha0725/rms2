@@ -2,6 +2,7 @@
 using Application.DTOs.Payment;
 using Application.Features.ManagePayments.ConfirmCashPayment;
 using Application.Features.ManagePayments.CreatePayment;
+using Application.Features.ManagePayments.GetInvoiceTableData;
 using Application.Features.ManagePayments.GetPaymentStatus;
 using Application.Features.ManagePayments.UpdatePaymentStatus;
 using Application.Features.ManageReservations.ApproveDocument;
@@ -138,5 +139,18 @@ namespace WebAPI.Controllers
             }
             return BadRequest(result.Error);
         }
+
+        //[HttpGet("invoice-table-data")]
+        //public async Task<IActionResult> GetInvoiceTableData(CancellationToken cancellationToken)
+        //{
+        //    var query = new GetInvoiceTableDataQuery();
+        //    var result = await mediator.Send(query, cancellationToken);
+
+        //    if (result.IsSuccess)
+        //    {
+        //        return Ok(result.Value);
+        //    }
+        //    return BadRequest(result.Error);
+        //}
     }
 }
