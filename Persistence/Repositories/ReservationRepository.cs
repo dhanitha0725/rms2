@@ -2,6 +2,7 @@
 using Application.Abstractions.Interfaces;
 using Application.DTOs.ReservationDtos;
 using Domain.Entities;
+using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Persistence.DbContexts;
 
@@ -130,6 +131,70 @@ namespace Persistence.Repositories
                 UserType = r.Reservation.UserType,
                 FacilityId = r.PackageFacility?.FacilityId ?? r.RoomFacility?.FacilityId ?? 0,
             }).ToList();
+        }
+
+        public async Task<ReservationStatsDto> GetReservationStatsForLast30DaysAsync(CancellationToken cancellationToken = default)
+        {
+            // Calculate date range - last 30 days
+            var endDate = DateTime.UtcNow;
+            var startDate = endDate.AddDays(-30);
+
+            // Define the status groups
+            var pendingStatuses = new[]
+            {
+                ReservationStatus.PendingApproval,
+                ReservationStatus.PendingPayment,
+                ReservationStatus.PendingPaymentVerification,
+                ReservationStatus.PendingCashPayment
+            };
+
+            var cancelledOrExpiredStatuses = new[]
+            {
+                ReservationStatus.Cancelled,
+                ReservationStatus.Expired
+            };
+
+            // Get relevant reservations for the period
+            var query = context.Reservations
+                .Where(r => r.EndDate >= startDate && r.StartDate <= endDate);
+
+            // Group by status and count
+            var statusGroups = await query
+                .GroupBy(r => r.Status)
+                .Select(g => new
+                {
+                    Status = g.Key,
+                    Count = g.Count()
+                })
+                .ToListAsync(cancellationToken);
+
+            // Calculate total revenue from completed reservations
+            var totalRevenue = await query
+                .Where(r => r.Status == ReservationStatus.Completed)
+                .SumAsync(r => r.Total, cancellationToken);
+
+            // Build the statistics DTO
+            var stats = new ReservationStatsDto
+            {
+                // Count pending reservations
+                TotalPendingReservations = statusGroups
+                    .Where(g => pendingStatuses.Contains(g.Status))
+                    .Sum(g => g.Count),
+
+                // Count completed reservations
+                TotalCompletedReservations = statusGroups
+                    .FirstOrDefault(g => g.Status == ReservationStatus.Completed)?.Count ?? 0,
+
+                // Count cancelled or expired reservations
+                TotalCancelledOrExpiredReservations = statusGroups
+                    .Where(g => cancelledOrExpiredStatuses.Contains(g.Status))
+                    .Sum(g => g.Count),
+
+                // Total revenue
+                TotalRevenue = totalRevenue
+            };
+
+            return stats;
         }
     }
 }
