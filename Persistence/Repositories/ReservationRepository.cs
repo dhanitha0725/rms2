@@ -231,5 +231,57 @@ namespace Persistence.Repositories
 
             return result;
         }
+
+        public async Task<FacilityReservationCountsResponse> GetFacilityReservationCountsAsync(
+            CancellationToken cancellationToken = default)
+        {
+            // Calculate date range for last 30 days
+            var endDate = DateTime.UtcNow.Date;
+            var startDate = endDate.AddDays(-29);
+
+            // Get reservations with rooms
+            var roomReservations = context.Reservations
+                .Where(r => r.CreatedDate >= startDate && r.CreatedDate <= endDate.AddDays(1).AddSeconds(-1))
+                .Where(r => r.ReservedRooms.Any())
+                .SelectMany(r => r.ReservedRooms.Select(rr => new
+                {
+                    ReservationId = r.ReservationID,
+                    FacilityId = rr.Room.FacilityID,
+                    rr.Room.Facility.FacilityName
+                }))
+                .Distinct();
+
+            // Get reservations with packages
+            var packageReservations = context.Reservations
+                .Where(r => r.CreatedDate >= startDate && r.CreatedDate <= endDate.AddDays(1).AddSeconds(-1))
+                .Where(r => r.ReservedPackages.Any())
+                .SelectMany(r => r.ReservedPackages.Select(rp => new
+                {
+                    ReservationId = r.ReservationID,
+                    FacilityId = rp.Package.FacilityID,
+                    rp.Package.Facility.FacilityName
+                }))
+                .Distinct();
+
+            // Union the two queries
+            var allReservations = roomReservations.Union(packageReservations);
+
+            // Group by facility
+            var reservationCounts = await allReservations
+                .GroupBy(x => new { x.FacilityId, x.FacilityName })
+                .Select(g => new FacilityReservationCountDto
+                {
+                    FacilityId = g.Key.FacilityId,
+                    FacilityName = g.Key.FacilityName,
+                    ReservationCount = g.Count()
+                })
+                .ToListAsync(cancellationToken);
+
+            // Return the result
+            return new FacilityReservationCountsResponse
+            {
+                FacilityCounts = reservationCounts
+            };
+        }
     }
 }
