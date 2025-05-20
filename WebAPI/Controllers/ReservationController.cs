@@ -1,12 +1,12 @@
 ﻿using Application.DTOs.ReservationDtos;
 using Application.Features.ManageFacility.SelectedFacilityDetails;
-using Application.Features.ManageReservations.ApproveDocument;
 using Application.Features.ManageReservations.CalculateTotal;
 using Application.Features.ManageReservations.CancelReservation;
 using Application.Features.ManageReservations.CheckAvailability;
 using Application.Features.ManageReservations.CreateReservation;
 using Application.Features.ManageReservations.GetReservationDetails;
 using Application.Features.ManageReservations.GetReservationTableData;
+using Application.Features.ManageReservations.UpdateReservation;
 using Application.Features.ManageReservations.UploadDocument;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -108,6 +108,18 @@ namespace WebAPI.Controllers
 
         [HttpPost("cancel-reservation")]
         public async Task<IActionResult> CancelReservation([FromBody] CancelReservationCommand command)
+        {
+            var result = await mediator.Send(command);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.Error);
+            }
+            return Ok(result.Value);
+        }
+
+        // update reservation
+        [HttpPut("update-reservation")]
+        public async Task<IActionResult> UpdateReservation([FromBody] UpdateReservationCommand command)
         {
             var result = await mediator.Send(command);
             if (!result.IsSuccess)

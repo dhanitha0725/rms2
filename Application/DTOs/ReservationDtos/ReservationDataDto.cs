@@ -4,6 +4,7 @@
     public class ReservationDataDto
     {
         public int ReservationId { get; set; }
+        public int FacilityId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public DateTime CreatedDate { get; set; }
