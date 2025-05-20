@@ -11,6 +11,7 @@ namespace Utilities.BackgroundJobs
     {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            logger.Information("Background task hosted service starting.");
             while (!stoppingToken.IsCancellationRequested)
             {
                 var workItem = await queue.DequeueAsync(stoppingToken);
@@ -23,6 +24,7 @@ namespace Utilities.BackgroundJobs
                     logger.Error(ex, "Error occurred executing task.");
                 }
             }
+            logger.Information("Background task hosted service stopping.");
         }
     }
 }

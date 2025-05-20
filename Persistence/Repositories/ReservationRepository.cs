@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using Application.Abstractions.Interfaces;
+using Application.DTOs.ReservationDtos;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Persistence.DbContexts;
@@ -91,6 +92,44 @@ namespace Persistence.Repositories
                         .ThenInclude(rr => rr.Room)
                         .ThenInclude(room => room.Facility)
                 .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        public async Task<List<ReservationDataDto>> GetReservationsWithFacilityAsync(CancellationToken cancellationToken = default)
+        {
+            var results = await context.Reservations
+                .Select(r => new
+                {
+                    Reservation = r,
+                    // Get facility from packages
+                    PackageFacility = r.ReservedPackages
+                        .Select(rp => new
+                        {
+                            FacilityId = rp.Package.FacilityID,
+                        })
+                        .FirstOrDefault(),
+                    // Get facility from rooms
+                    RoomFacility = r.ReservedRooms
+                        .Select(rr => new
+                        {
+                            FacilityId = rr.Room.FacilityID,
+                        })
+                        .FirstOrDefault()
+                })
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            // Map to DTOs
+            return results.Select(r => new ReservationDataDto
+            {
+                ReservationId = r.Reservation.ReservationID,
+                StartDate = r.Reservation.StartDate,
+                EndDate = r.Reservation.EndDate,
+                CreatedDate = r.Reservation.CreatedDate,
+                Total = r.Reservation.Total,
+                Status = r.Reservation.Status.ToString(),
+                UserType = r.Reservation.UserType,
+                FacilityId = r.PackageFacility?.FacilityId ?? r.RoomFacility?.FacilityId ?? 0,
+            }).ToList();
         }
     }
 }

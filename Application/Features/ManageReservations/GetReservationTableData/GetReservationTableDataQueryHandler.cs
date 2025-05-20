@@ -1,13 +1,14 @@
 ﻿using Application.Abstractions.Interfaces;
 using Application.DTOs.ReservationDtos;
 using Domain.Common;
-using Domain.Entities;
 using MediatR;
+using Serilog;
 
 namespace Application.Features.ManageReservations.GetReservationTableData
 {
     public class GetReservationTableDataQueryHandler(
-            IGenericRepository<Reservation, int> reservationRepository)
+            IReservationRepository reservationRepository,
+            ILogger logger)
             : IRequestHandler<GetReservationTableDataQuery, Result<List<ReservationDataDto>>>
     {
         public async Task<Result<List<ReservationDataDto>>> Handle(
@@ -16,35 +17,23 @@ namespace Application.Features.ManageReservations.GetReservationTableData
         {
             try
             {
-                // Get all reservations
-                var reservations = await reservationRepository.GetAllAsync(cancellationToken);
+                // Get all reservations with facility information using the repository method
+                var reservationDataDtos = await reservationRepository.GetReservationsWithFacilityAsync(cancellationToken);
 
-                if (!reservations.Any())
+                if (reservationDataDtos == null || !reservationDataDtos.Any())
                 {
                     return Result<List<ReservationDataDto>>.Failure(
                         new Error("No reservations found."));
                 }
 
-                // Map to DTOs
-                var reservationDataDtos = reservations.Select(r => new ReservationDataDto
-                {
-                    ReservationId = r.ReservationID,
-                    StartDate = r.StartDate,
-                    EndDate = r.EndDate,
-                    CreatedDate = r.CreatedDate,
-                    Total = r.Total,
-                    Status = r.Status.ToString(),
-                    UserType = r.UserType
-                }).ToList();
-
                 return Result<List<ReservationDataDto>>.Success(reservationDataDtos);
             }
             catch (Exception ex)
             {
+                logger.Error(ex, "An error occurred while retrieving reservations");
                 return Result<List<ReservationDataDto>>.Failure(
-                    new Error($"An error occurred while retrieving reservations: {ex.Message}"));
+                    new Error("An error occurred while retrieving reservations"));
             }
         }
     }
-   
 }

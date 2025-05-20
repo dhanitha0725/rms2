@@ -16,9 +16,10 @@ namespace Application.Features.ManageReservations.CreateReservation
                 IGenericRepository<ReservedPackage, int> reservedPackageRepository,
                 IGenericRepository<ReservedRoom, int> reservedRoomRepository,
                 IGenericRepository<Room, int> roomRepository,
-                IGenericRepository<Payment,int> paymentRepository,
+                IGenericRepository<Payment, int> paymentRepository,
                 IBackgroundTaskQueue backgroundTaskQueue,
                 IServiceScopeFactory serviceScopeFactory,
+                IEmailContentService emailContentService,
                 IUnitOfWork unitOfWork,
                 ILogger logger)
                 : IRequestHandler<CreateReservationCommand, Result<ReservationResultDto>>
@@ -34,21 +35,16 @@ namespace Application.Features.ManageReservations.CreateReservation
                 ReservationStatus status;
                 if (string.Equals(request.CustomerType, "private", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (request is { PaymentMethod: nameof(PaymentMethods.Cash), IsPaymentReceived: true })
+                    status = request.PaymentMethod switch
                     {
-                        status = ReservationStatus.Confirmed;
-                    }
-                    else
-                    {
-                        status = request.PaymentMethod switch
-                        {
-                            nameof(PaymentMethods.Bank) => ReservationStatus.PendingPaymentVerification,
-                            nameof(PaymentMethods.Cash) => ReservationStatus.PendingCashPayment,
-                            _ => throw new ArgumentException("Invalid payment method")
-                        };
-                    }
+                        nameof(PaymentMethods.Online) => ReservationStatus.PendingPayment,
+                        nameof(PaymentMethods.Bank) => ReservationStatus.PendingPaymentVerification,
+                        nameof(PaymentMethods.Cash) when request.IsPaymentReceived => ReservationStatus.Confirmed,
+                        nameof(PaymentMethods.Cash) => ReservationStatus.PendingCashPayment,
+                        _ => throw new ArgumentException("Invalid payment method")
+                    };
                 }
-                else
+                else // public or corporate
                 {
                     status = ReservationStatus.PendingApproval;
                 }
@@ -92,7 +88,9 @@ namespace Application.Features.ManageReservations.CreateReservation
                         {
                             ReservationID = reservation.ReservationID,
                             PackageID = item.ItemId,
-                            status = "reserved"
+                            status = "reserved",
+                            StartDate = request.StartDate,
+                            EndDate = request.EndDate
                         };
 
                         await reservedPackageRepository.AddAsync(reservedPackage, cancellationToken);
@@ -159,19 +157,27 @@ namespace Application.Features.ManageReservations.CreateReservation
 
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 logger.Information("All changes saved to the database for ReservationID {ReservationID}.", reservation.ReservationID);
-                await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 // expire for late online payments
                 if (reservation.Status == ReservationStatus.PendingPayment)
                 {
                     ScheduleReservationExpiration(reservation.ReservationID);
                 }
-
-                // cancel for late cash payments
-                if (reservation.Status == ReservationStatus.PendingCashPayment)
+                else if (status == ReservationStatus.PendingCashPayment)
                 {
                     ScheduleReservationExpirationForCashPayments(reservation.ReservationID);
+                    ScheduleCashPaymentInstructions(reservation.ReservationID, reservationUserDetails.Email);
                 }
+                else if (status == ReservationStatus.PendingPaymentVerification)
+                {
+                    ScheduleBankTransferInstructions(reservation.ReservationID, reservationUserDetails.Email);
+                }
+                else if (status == ReservationStatus.PendingApproval)
+                {
+                    SchedulePendingApprovalNotification(reservation.ReservationID, reservationUserDetails.Email);
+                }
+
+                await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 return Result<ReservationResultDto>.Success(new ReservationResultDto
                 {
@@ -196,7 +202,7 @@ namespace Application.Features.ManageReservations.CreateReservation
             backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
             {
                 // Wait for 30 minutes
-                await Task.Delay(TimeSpan.FromMinutes(30), cancellationToken);
+                await Task.Delay(TimeSpan.FromMinutes(2), cancellationToken);
 
                 // Create the expiration task
                 var expireTask = new ExpireReservationTask(
@@ -206,6 +212,7 @@ namespace Application.Features.ManageReservations.CreateReservation
 
                 // Execute the task
                 await expireTask.Execute(cancellationToken);
+                logger.Information("Reservation expired: Reservation Id: {ReservationId}", reservationId);
             });
 
             logger.Information("Scheduled expiration for reservation {ReservationId} in 30 minutes.", reservationId);
@@ -213,10 +220,10 @@ namespace Application.Features.ManageReservations.CreateReservation
 
         private void ScheduleReservationExpirationForCashPayments(int reservationId)
         {
-            // Queue the expiration task to run after 2 days
+            // Queue the expiration task to run after 1 day
             backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
             {
-                // Wait for 2 days
+                // Wait for 1 day
                 await Task.Delay(TimeSpan.FromDays(1), cancellationToken);
 
                 // Use a new scope to resolve services
@@ -251,6 +258,75 @@ namespace Application.Features.ManageReservations.CreateReservation
             });
 
             logger.Information("Scheduled cancellation for reservation {ReservationId} in 2 days.", reservationId);
+        }
+
+        private void SchedulePendingApprovalNotification(int reservationId, string email)
+        {
+            backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+
+                try
+                {
+                    var emailBody = await emailContentService.GeneratePendingApprovalEmailBodyAsync(reservationId, cancellationToken);
+                    await emailService.SendEmailAsync(email, "Reservation Under Review", emailBody);
+                    logger.Information("Pending approval notification sent for reservation {ReservationId}.", reservationId);
+                }
+                catch (Exception e)
+                {
+                    logger.Error(e, "Error sending pending approval notification for reservation {ReservationId}.", reservationId);
+                    throw;
+                }
+            });
+            logger.Information("Scheduled pending approval notification for reservation {ReservationId}.", reservationId);
+        }
+
+        private void ScheduleBankTransferInstructions(int reservationId, string email)
+        {
+            backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+
+                try
+                {
+                    var emailBody = await emailContentService.GenerateBankTransferInstructionsEmailBodyAsync(reservationId, cancellationToken);
+                    await emailService.SendEmailAsync(email, "Bank Transfer Instructions", emailBody);
+                    logger.Information("Bank transfer instructions sent for reservation {ReservationId}.", reservationId);
+                }
+                catch (Exception e)
+                {
+                    logger.Error(e, "Error sending bank transfer instructions for reservation {ReservationId}.", reservationId);
+                    throw;
+                }
+            });
+            logger.Information("Scheduled bank transfer instructions for reservation {ReservationId}.", reservationId);
+        }
+
+        private void ScheduleCashPaymentInstructions(int reservationId, string email)
+        {
+            backgroundTaskQueue.QueueBackgroundWorkItem(async (cancellationToken) =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+
+                try
+                {
+                    var emailBody = await emailContentService.GenerateCashPaymentInstructionsEmailBodyAsync(reservationId, cancellationToken);
+                    await emailService.SendEmailAsync(email, "Cash Payment Instructions", emailBody);
+                    logger.Information("Cash payment instructions sent for reservation {ReservationId}.", reservationId);
+                }
+                catch (Exception e)
+                {
+                    logger.Error(e, "Error sending cash payment instructions for reservation {ReservationId}.", reservationId);
+                    throw;
+                }
+            });
+            logger.Information("Scheduled cash payment instructions for reservation {ReservationId}.", reservationId);
         }
     }
 }

@@ -3,7 +3,6 @@ using Application.DTOs.FacilityDtos;
 using Domain.Common;
 using Domain.Entities;
 using MediatR;
-using System.Text.Json;
 
 namespace Application.Features.ManageFacility.SelectedFacilityDetails
 {

@@ -4,6 +4,7 @@
     public class ReservationDataDto
     {
         public int ReservationId { get; set; }
+        public int FacilityId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public DateTime CreatedDate { get; set; }
@@ -44,6 +45,7 @@
     // reservation payment details
     public class PaymentDto
     {
+        public Guid paymentId { get; set; }
         public string OrderID { get; set; }
         public string Method { get; set; }
         public decimal? AmountPaid { get; set; }

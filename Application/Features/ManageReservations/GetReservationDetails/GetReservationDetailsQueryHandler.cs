@@ -44,6 +44,7 @@ namespace Application.Features.ManageReservations.GetReservationDetails
                 },
                 Payments = reservation.Payments?.Select(p => new PaymentDto
                 {
+                    paymentId = p.PaymentID,
                     OrderID = p.OrderID,
                     Method = p.Method,
                     AmountPaid = p.AmountPaid,
