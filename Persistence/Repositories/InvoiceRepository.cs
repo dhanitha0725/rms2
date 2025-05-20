@@ -3,7 +3,6 @@ using Application.DTOs.InvoiceDtos;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Persistence.DbContexts;
-using System.Linq;
 
 namespace Persistence.Repositories
 {

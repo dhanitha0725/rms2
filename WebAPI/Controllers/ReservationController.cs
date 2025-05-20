@@ -4,6 +4,7 @@ using Application.Features.ManageReservations.CalculateTotal;
 using Application.Features.ManageReservations.CancelReservation;
 using Application.Features.ManageReservations.CheckAvailability;
 using Application.Features.ManageReservations.CreateReservation;
+using Application.Features.ManageReservations.GetReservationChartData;
 using Application.Features.ManageReservations.GetReservationDetails;
 using Application.Features.ManageReservations.GetReservationStats;
 using Application.Features.ManageReservations.GetReservationTableData;
@@ -135,6 +136,19 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetReservationStats()
         {
             var query = new GetReservationStatQuery();
+            var result = await mediator.Send(query);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.Error);
+            }
+            return Ok(result.Value);
+        }
+
+        // Get daily reservation counts
+        [HttpGet("daily-reservation-counts")]
+        public async Task<IActionResult> GetDailyReservationCounts()
+        {
+            var query = new GetReservationChartDataQuery();
             var result = await mediator.Send(query);
             if (!result.IsSuccess)
             {

@@ -196,5 +196,40 @@ namespace Persistence.Repositories
 
             return stats;
         }
+
+        public async Task<DailyReservationCountsResponse> GetDailyReservationCountsAsync(
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            CancellationToken cancellationToken = default)
+        {
+            // Default to last 30 days
+            var end = endDate?.Date ?? DateTime.UtcNow.Date;
+            var start = startDate?.Date ?? end.AddDays(-29);
+
+            var reservationCounts = await context.Reservations
+                .Where(r => r.CreatedDate >= start && r.CreatedDate <= end.AddDays(1).AddSeconds(-1))
+                .GroupBy(r => r.CreatedDate.Date)
+                .Select(g => new DailyReservationCountDto
+                {
+                    Date = g.Key,
+                    Count = g.Count()
+                })
+                .ToListAsync(cancellationToken);
+
+            var allDates = Enumerable.Range(0, (end - start).Days + 1)
+                .Select(offset => start.AddDays(offset).Date)
+                .ToList();
+
+            var result = new DailyReservationCountsResponse
+            {
+                DailyCounts = allDates
+                    .Select(date => reservationCounts.FirstOrDefault(r => r.Date.Date == date) ??
+                        new DailyReservationCountDto { Date = date, Count = 0 })
+                    .OrderBy(r => r.Date)
+                    .ToList()
+            };
+
+            return result;
+        }
     }
 }
