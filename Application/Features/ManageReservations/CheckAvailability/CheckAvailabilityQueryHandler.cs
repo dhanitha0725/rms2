@@ -9,7 +9,6 @@ using Serilog;
 namespace Application.Features.ManageReservations.CheckAvailability
 {
     public class CheckAvailabilityQueryHandler(
-            IGenericRepository<ReservedRoom, int> reservedRoomRepository,
             IGenericRepository<ReservedPackage, int> reservedPackageRepository,
             IGenericRepository<Room, int> roomRepository,
             IGenericRepository<Package, int> packageRepository,
@@ -18,7 +17,7 @@ namespace Application.Features.ManageReservations.CheckAvailability
     {
         public async Task<Result<AvailabilityResponseDto>> Handle(
             CheckAvailabilityQuery request,
-            CancellationToken cancellationToken) 
+            CancellationToken cancellationToken)
         {
             var isAvailable = true;
             var requestDateRange = request.CheckAvailabilityDto;
@@ -27,12 +26,12 @@ namespace Application.Features.ManageReservations.CheckAvailability
             {
                 if (item.Type == "package")
                 {
-                    var result = await CheckPackageAvailability(item, requestDateRange, cancellationToken); 
+                    var result = await CheckPackageAvailability(item, requestDateRange, cancellationToken);
                     if (!result) isAvailable = false;
                 }
                 else if (item.Type == "room")
                 {
-                    var result = await CheckRoomAvailability(item, requestDateRange, cancellationToken); 
+                    var result = await CheckRoomAvailability(item, requestDateRange, cancellationToken);
                     if (!result) isAvailable = false;
                 }
                 else
@@ -55,11 +54,11 @@ namespace Application.Features.ManageReservations.CheckAvailability
         private async Task<bool> CheckPackageAvailability(
             AvailableItemDto item,
             CheckAvailabilityDto request,
-            CancellationToken cancellationToken) 
+            CancellationToken cancellationToken)
         {
             var packageId = item.ItemId;
 
-            var package = await packageRepository.GetByIdAsync(packageId, cancellationToken); 
+            var package = await packageRepository.GetByIdAsync(packageId, cancellationToken);
             if (package == null)
             {
                 logger.Warning("Package with ID {PackageId} not found.", packageId);
