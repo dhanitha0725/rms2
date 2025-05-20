@@ -31,7 +31,7 @@ namespace Persistence.Configurations
 
             builder.Property(i => i.IssuedDate)
                 .HasColumnName("IssuedDate")
-                .HasColumnType("timestamp")
+                .HasColumnType("timestamp with time zone")
                 .IsRequired();
 
             // one to many relationship between Invoice and Reservation

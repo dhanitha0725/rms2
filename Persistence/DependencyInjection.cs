@@ -10,7 +10,7 @@ namespace Persistence
     public static class DependencyInjection
     {
         public static IServiceCollection AddInfrastructure(
-            this IServiceCollection services, 
+            this IServiceCollection services,
             IConfiguration configuration)
         {
             services.AddDbContext<ReservationDbContext>(options =>
@@ -20,6 +20,7 @@ namespace Persistence
             services.AddScoped<IReservationRepository, ReservationRepository>();
             services.AddScoped<IRoomRepository, RoomRepository>();
             services.AddScoped<IReportRepository, ReportRepository>();
+            services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 

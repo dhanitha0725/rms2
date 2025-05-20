@@ -9,7 +9,6 @@ using Serilog;
 namespace Application.Features.ManageReservations.CheckAvailability
 {
     public class CheckAvailabilityQueryHandler(
-            IGenericRepository<ReservedRoom, int> reservedRoomRepository,
             IGenericRepository<ReservedPackage, int> reservedPackageRepository,
             IGenericRepository<Room, int> roomRepository,
             IGenericRepository<Package, int> packageRepository,
@@ -18,7 +17,7 @@ namespace Application.Features.ManageReservations.CheckAvailability
     {
         public async Task<Result<AvailabilityResponseDto>> Handle(
             CheckAvailabilityQuery request,
-            CancellationToken cancellationToken) 
+            CancellationToken cancellationToken)
         {
             var isAvailable = true;
             var requestDateRange = request.CheckAvailabilityDto;
@@ -27,12 +26,12 @@ namespace Application.Features.ManageReservations.CheckAvailability
             {
                 if (item.Type == "package")
                 {
-                    var result = await CheckPackageAvailability(item, requestDateRange, cancellationToken); 
+                    var result = await CheckPackageAvailability(item, requestDateRange, cancellationToken);
                     if (!result) isAvailable = false;
                 }
                 else if (item.Type == "room")
                 {
-                    var result = await CheckRoomAvailability(item, requestDateRange, cancellationToken); 
+                    var result = await CheckRoomAvailability(item, requestDateRange, cancellationToken);
                     if (!result) isAvailable = false;
                 }
                 else
@@ -55,11 +54,11 @@ namespace Application.Features.ManageReservations.CheckAvailability
         private async Task<bool> CheckPackageAvailability(
             AvailableItemDto item,
             CheckAvailabilityDto request,
-            CancellationToken cancellationToken) 
+            CancellationToken cancellationToken)
         {
             var packageId = item.ItemId;
 
-            var package = await packageRepository.GetByIdAsync(packageId, cancellationToken); 
+            var package = await packageRepository.GetByIdAsync(packageId, cancellationToken);
             if (package == null)
             {
                 logger.Warning("Package with ID {PackageId} not found.", packageId);
@@ -70,8 +69,8 @@ namespace Application.Features.ManageReservations.CheckAvailability
                 rp => rp.PackageID == packageId &&
                       rp.Reservation.Status != ReservationStatus.Cancelled &&
                       rp.Reservation.Status != ReservationStatus.Completed &&
-                      rp.StartDate < request.EndDate &&
-                      rp.EndDate > request.StartDate,
+                      rp.StartDate <= request.EndDate &&
+                      rp.EndDate >= request.StartDate,
                 cancellationToken);
 
             if (hasOverlap)
@@ -94,7 +93,6 @@ namespace Application.Features.ManageReservations.CheckAvailability
             var roomTypeId = item.ItemId;
             var facilityId = request.FacilityId;
 
-            // Fetch rooms that are available and not reserved during the requested date range
             var availableRoomsCount = await roomRepository.CountAsync(
                 r => r.RoomTypeID == roomTypeId &&
                      r.FacilityID == facilityId &&
@@ -108,11 +106,15 @@ namespace Application.Features.ManageReservations.CheckAvailability
 
             if (availableRoomsCount < item.Quantity)
             {
-                logger.Warning("Insufficient rooms of type {RoomTypeId} in facility {FacilityId}.",
-                    roomTypeId, facilityId);
+                logger.Warning("Insufficient rooms of type {RoomTypeId} in facility {FacilityId}. " +
+                              "Required: {RequiredCount}, Available: {AvailableCount}",
+                    roomTypeId, facilityId, item.Quantity, availableRoomsCount);
                 return false;
             }
 
+            logger.Information("Found {AvailableCount} available rooms of type {RoomTypeId} in facility {FacilityId}. " +
+                              "Required: {RequiredCount}",
+                availableRoomsCount, roomTypeId, facilityId, item.Quantity);
             return true;
         }
     }

@@ -267,6 +267,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                 using var scope = serviceScopeFactory.CreateScope();
                 var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+                var emailContentService = scope.ServiceProvider.GetRequiredService<IEmailContentService>();
 
                 try
                 {
@@ -290,6 +291,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                 using var scope = serviceScopeFactory.CreateScope();
                 var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+                var emailContentService = scope.ServiceProvider.GetRequiredService<IEmailContentService>();
 
                 try
                 {
@@ -313,6 +315,7 @@ namespace Application.Features.ManageReservations.CreateReservation
                 using var scope = serviceScopeFactory.CreateScope();
                 var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+                var emailContentService = scope.ServiceProvider.GetRequiredService<IEmailContentService>();
 
                 try
                 {

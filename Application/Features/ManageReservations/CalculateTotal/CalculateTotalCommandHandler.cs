@@ -148,9 +148,29 @@ namespace Application.Features.ManageReservations.CalculateTotal
                     if (!request.StartDate.HasValue || !request.EndDate.HasValue)
                         return Result<PriceBreakdownDto>.Failure(new Error("Dates are required for daily packages"));
 
-                    var days = (request.EndDate.Value - request.StartDate.Value).Days;
+                    // Calculate days, handling same-day reservations as 1 day for packages
+                    int days;
+                    if (request.StartDate.Value.Date == request.EndDate.Value.Date)
+                    {
+                        // Same day reservation counts as 1 day for packages
+                        days = 1;
+                        logger.Information("Same-day package reservation detected. Counting as 1 day.");
+                    }
+                    else
+                    {
+                        // For multi-day reservations, calculate the difference in days
+                        days = (request.EndDate.Value.Date - request.StartDate.Value.Date).Days;
+
+                        // Add 1 to include the end date 
+                        days += 1;
+                    }
+
                     subTotal = pricing.First().Price * days;
                     pricingType = "daily";
+
+                    logger.Information("Package {PackageId} duration calculated as {Days} days from {StartDate} to {EndDate}",
+                        item.ItemId, days, request.StartDate.Value.ToString("yyyy-MM-dd"),
+                        request.EndDate.Value.ToString("yyyy-MM-dd"));
                 }
                 else
                 {
@@ -170,6 +190,7 @@ namespace Application.Features.ManageReservations.CalculateTotal
             }
             catch (Exception ex)
             {
+                logger.Error(ex, "Error processing package {PackageId}", item.ItemId);
                 return Result<PriceBreakdownDto>.Failure(new Error(ex.Message));
             }
         }
