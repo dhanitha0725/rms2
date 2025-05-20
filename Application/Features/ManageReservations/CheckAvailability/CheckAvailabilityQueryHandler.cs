@@ -69,8 +69,8 @@ namespace Application.Features.ManageReservations.CheckAvailability
                 rp => rp.PackageID == packageId &&
                       rp.Reservation.Status != ReservationStatus.Cancelled &&
                       rp.Reservation.Status != ReservationStatus.Completed &&
-                      rp.StartDate < request.EndDate &&
-                      rp.EndDate > request.StartDate,
+                      rp.StartDate <= request.EndDate &&
+                      rp.EndDate >= request.StartDate,
                 cancellationToken);
 
             if (hasOverlap)
@@ -93,7 +93,6 @@ namespace Application.Features.ManageReservations.CheckAvailability
             var roomTypeId = item.ItemId;
             var facilityId = request.FacilityId;
 
-            // Fetch rooms that are available and not reserved during the requested date range
             var availableRoomsCount = await roomRepository.CountAsync(
                 r => r.RoomTypeID == roomTypeId &&
                      r.FacilityID == facilityId &&
@@ -107,11 +106,15 @@ namespace Application.Features.ManageReservations.CheckAvailability
 
             if (availableRoomsCount < item.Quantity)
             {
-                logger.Warning("Insufficient rooms of type {RoomTypeId} in facility {FacilityId}.",
-                    roomTypeId, facilityId);
+                logger.Warning("Insufficient rooms of type {RoomTypeId} in facility {FacilityId}. " +
+                              "Required: {RequiredCount}, Available: {AvailableCount}",
+                    roomTypeId, facilityId, item.Quantity, availableRoomsCount);
                 return false;
             }
 
+            logger.Information("Found {AvailableCount} available rooms of type {RoomTypeId} in facility {FacilityId}. " +
+                              "Required: {RequiredCount}",
+                availableRoomsCount, roomTypeId, facilityId, item.Quantity);
             return true;
         }
     }
