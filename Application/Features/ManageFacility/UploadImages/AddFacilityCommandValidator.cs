@@ -9,8 +9,8 @@ namespace Application.Features.ManageFacility.UploadImages
             RuleFor(x => x.FacilityId).GreaterThan(0);
             RuleFor(x => x.Files)
                 .NotEmpty()
-                .Must(files => files.Count <= 5)
-                .WithMessage("Maximum 5 images allowed");
+                .Must(files => files.Count <= 10)
+                .WithMessage("Maximum 10 images allowed");
 
             RuleForEach(x => x.Files)
                 .Must(file => file.Length > 0)

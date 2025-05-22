@@ -1,4 +1,7 @@
-﻿using Application.Behaviors;
+﻿using Application.Abstractions.Interfaces;
+using Application.Behaviors;
+using Application.EventHandlers;
+using Application.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +29,7 @@ namespace Application
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationPipelineBehaviour<,>));
             services.AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingPipelineBehavior<,>));
 
+            services.AddScoped<IEmailContentService, EmailContentService>();
 
             return services;
         }

@@ -2,18 +2,18 @@
 using Application.DTOs.ReservationDtos;
 using Domain.Common;
 using Domain.Entities;
+using Domain.Enums;
 using MediatR;
 using Serilog;
 
 namespace Application.Features.ManageReservations.CheckAvailability
 {
     public class CheckAvailabilityQueryHandler(
-        IGenericRepository<ReservedRoom, int> reservedRoomRepository,
-        IGenericRepository<ReservedPackage, int> reservedPackageRepository,
-        IGenericRepository<Room, int> roomRepository,
-        IGenericRepository<Package, int> packageRepository,
-        ILogger logger)
-        : IRequestHandler<CheckAvailabilityQuery, Result<AvailabilityResponseDto>>
+            IGenericRepository<ReservedPackage, int> reservedPackageRepository,
+            IGenericRepository<Room, int> roomRepository,
+            IGenericRepository<Package, int> packageRepository,
+            ILogger logger)
+            : IRequestHandler<CheckAvailabilityQuery, Result<AvailabilityResponseDto>>
     {
         public async Task<Result<AvailabilityResponseDto>> Handle(
             CheckAvailabilityQuery request,
@@ -26,13 +26,17 @@ namespace Application.Features.ManageReservations.CheckAvailability
             {
                 if (item.Type == "package")
                 {
-                    var result = await CheckPackageAvailability(item, requestDateRange);
+                    var result = await CheckPackageAvailability(item, requestDateRange, cancellationToken);
                     if (!result) isAvailable = false;
                 }
                 else if (item.Type == "room")
                 {
-                    var result = await CheckRoomAvailability(item, requestDateRange);
+                    var result = await CheckRoomAvailability(item, requestDateRange, cancellationToken);
                     if (!result) isAvailable = false;
+                }
+                else
+                {
+                    logger.Warning("Unknown item type: {ItemType}", item.Type);
                 }
             }
 
@@ -49,48 +53,69 @@ namespace Application.Features.ManageReservations.CheckAvailability
 
         private async Task<bool> CheckPackageAvailability(
             AvailableItemDto item,
-            CheckAvailabilityDto request)
+            CheckAvailabilityDto request,
+            CancellationToken cancellationToken)
         {
-            //get package details
-            var package = await packageRepository.GetByIdAsync(item.ItemId);
+            var packageId = item.ItemId;
+
+            var package = await packageRepository.GetByIdAsync(packageId, cancellationToken);
             if (package == null)
             {
+                logger.Warning("Package with ID {PackageId} not found.", packageId);
                 return false;
             }
 
-            //check existing reservations
-            var existingReservations = (await reservedPackageRepository.GetAllAsync())
-                .Count(rp => rp.PackageID == item.ItemId && 
-                             rp.Reservation != null && 
-                             rp.Reservation.StartDate < request.EndDate && 
-                             rp.Reservation.EndDate > request.StartDate);
+            var hasOverlap = await reservedPackageRepository.AnyAsync(
+                rp => rp.PackageID == packageId &&
+                      rp.Reservation.Status != ReservationStatus.Cancelled &&
+                      rp.Reservation.Status != ReservationStatus.Completed &&
+                      rp.StartDate <= request.EndDate &&
+                      rp.EndDate >= request.StartDate,
+                cancellationToken);
 
-            return existingReservations == 0;
+            if (hasOverlap)
+            {
+                logger.Information("Package with ID {PackageId} has overlapping active reservations between {StartDate} and {EndDate}.",
+                    packageId, request.StartDate, request.EndDate);
+                return false;
+            }
+
+            logger.Information("Package with ID {PackageId} is available between {StartDate} and {EndDate}.",
+                packageId, request.StartDate, request.EndDate);
+            return true;
         }
 
         private async Task<bool> CheckRoomAvailability(
             AvailableItemDto item,
-            CheckAvailabilityDto request)
+            CheckAvailabilityDto request,
+            CancellationToken cancellationToken)
         {
-            //get room details
-            var room = await roomRepository.GetByIdAsync(item.ItemId);
-            if (room == null)
+            var roomTypeId = item.ItemId;
+            var facilityId = request.FacilityId;
+
+            var availableRoomsCount = await roomRepository.CountAsync(
+                r => r.RoomTypeID == roomTypeId &&
+                     r.FacilityID == facilityId &&
+                     r.Status == "Available" &&
+                     !r.ReservedRooms.Any(rr =>
+                         rr.Reservation.Status != ReservationStatus.Cancelled &&
+                         rr.Reservation.Status != ReservationStatus.Completed &&
+                         rr.StartDate < request.EndDate &&
+                         rr.EndDate > request.StartDate),
+                cancellationToken);
+
+            if (availableRoomsCount < item.Quantity)
             {
+                logger.Warning("Insufficient rooms of type {RoomTypeId} in facility {FacilityId}. " +
+                              "Required: {RequiredCount}, Available: {AvailableCount}",
+                    roomTypeId, facilityId, item.Quantity, availableRoomsCount);
                 return false;
             }
 
-            //get total room of given type
-            var totalRooms = (await roomRepository.GetAllAsync())
-                .Count(r => r.RoomTypeID == room.RoomTypeID && r.Status == "Available");
-
-            // get total reserved rooms of given type
-            var reservedRooms = (await reservedRoomRepository.GetAllAsync())
-                .Count(r => r.RoomID == item.ItemId &&
-                            r.Reservation.StartDate < request.EndDate &&
-                            r.Reservation.EndDate > request.StartDate);
-
-            var available = totalRooms - reservedRooms;
-            return available >= item.Quantity;
+            logger.Information("Found {AvailableCount} available rooms of type {RoomTypeId} in facility {FacilityId}. " +
+                              "Required: {RequiredCount}",
+                availableRoomsCount, roomTypeId, facilityId, item.Quantity);
+            return true;
         }
     }
 }

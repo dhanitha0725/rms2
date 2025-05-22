@@ -13,17 +13,17 @@ namespace Application.Features.ManageReservations.GetReservationDetails
             GetReservationDetailsQuery request,
             CancellationToken cancellationToken)
         {
-            // get reservation details
+            // Get reservation details
             var reservation = await reservationRepository.GetReservationDetailsAsync(
-                    request.ReservationId, cancellationToken);
+                request.ReservationId, cancellationToken);
 
-            // check if reservation exists
+            // Check if reservation exists
             if (reservation == null)
             {
                 return Result<ReservationDetailsDto>.Failure(new Error("Reservation not found."));
             }
 
-            // map reservation to ReservationDetailsDto
+            // Map reservation to ReservationDetailsDto
             var result = new ReservationDetailsDto
             {
                 ReservationId = reservation.ReservationID,
@@ -44,6 +44,7 @@ namespace Application.Features.ManageReservations.GetReservationDetails
                 },
                 Payments = reservation.Payments?.Select(p => new PaymentDto
                 {
+                    paymentId = p.PaymentID,
                     OrderID = p.OrderID,
                     Method = p.Method,
                     AmountPaid = p.AmountPaid,
@@ -65,8 +66,31 @@ namespace Application.Features.ManageReservations.GetReservationDetails
                         RoomType = group.Key.TypeName,
                         FacilityName = group.Key.FacilityName,
                         Quantity = group.Count()
-                    }).ToList() ?? new List<ReservationRoomDto>()
+                    }).ToList() ?? new List<ReservationRoomDto>(),
+                Documents = reservation.Documents?.Select(d => new DocumentDetailsDto()
+                {
+                    DocumentId = d.DocumentID,
+                    DocumentType = d.DocumentType,
+                    Url = d.Url
+                }).ToList() ?? new List<DocumentDetailsDto>() 
             };
+
+            // Add payment-related documents
+            if (reservation.Payments != null)
+            {
+                foreach (var payment in reservation.Payments)
+                {
+                    if (payment.Documents != null)
+                    {
+                        result.Documents.AddRange(payment.Documents.Select(d => new DocumentDetailsDto()
+                        {
+                            DocumentId = d.DocumentID,
+                            DocumentType = d.DocumentType,
+                            Url = d.Url
+                        }));
+                    }
+                }
+            }
 
             return Result<ReservationDetailsDto>.Success(result);
         }

@@ -147,6 +147,24 @@ namespace Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Domain.Entities.FinancialReport", b =>
+                {
+                    b.Property<int>("FacilityId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FacilityName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TotalReservations")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("TotalRevenue")
+                        .HasColumnType("numeric");
+
+                    b.ToTable("FinancialReport");
+                });
+
             modelBuilder.Entity("Domain.Entities.Image", b =>
                 {
                     b.Property<int>("ImageID")
@@ -189,7 +207,7 @@ namespace Persistence.Migrations
                         .HasColumnName("AmountPaid");
 
                     b.Property<DateTime>("IssuedDate")
-                        .HasColumnType("timestamp")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("IssuedDate");
 
                     b.Property<int>("ReservationID")
@@ -253,7 +271,7 @@ namespace Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("PaymentID");
 
-                    b.Property<decimal>("AmountPaid")
+                    b.Property<decimal?>("AmountPaid")
                         .HasColumnType("decimal(12,2)")
                         .HasColumnName("AmountPaid");
 
@@ -275,7 +293,6 @@ namespace Persistence.Migrations
                         .HasColumnName("Method");
 
                     b.Property<string>("OrderID")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("ReservationID")
@@ -374,6 +391,24 @@ namespace Persistence.Migrations
                     b.ToTable("Reservations", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.ReservationReport", b =>
+                {
+                    b.Property<int>("FacilityId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FacilityName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TotalCompletedReservations")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalReservations")
+                        .HasColumnType("integer");
+
+                    b.ToTable("ReservationReport");
+                });
+
             modelBuilder.Entity("Domain.Entities.ReservationUserDetail", b =>
                 {
                     b.Property<int>("ReservationUserDetailID")
@@ -426,11 +461,19 @@ namespace Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReservedPackageID"));
 
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("EndDate");
+
                     b.Property<int>("PackageID")
                         .HasColumnType("integer");
 
                     b.Property<int>("ReservationID")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("StartDate");
 
                     b.Property<string>("status")
                         .IsRequired()

@@ -2,6 +2,7 @@
 using Application.DTOs.Payment;
 using Domain.Common;
 using Domain.Entities;
+using Domain.Enums;
 using MediatR;
 using Serilog;
 
@@ -23,7 +24,6 @@ namespace Application.Features.ManagePayments.CreatePayment
 
             try
             {
-
                 // Get all reservation user details and filter by the ReservationID
                 var allUserDetails = await reservationUseRepository.GetAllAsync(cancellationToken);
                 var reservationUserDetail = allUserDetails.FirstOrDefault(
@@ -40,7 +40,7 @@ namespace Application.Features.ManagePayments.CreatePayment
                     Currency = request.Currency,
                     CreatedDate = DateTime.UtcNow,
                     Status = "Pending",
-                    Method = "Online",
+                    Method = nameof(PaymentMethods.Online),
                     ReservationID = request.ReservationId,
                     ReservationUserID = reservationUserDetail.ReservationUserDetailID,
                 };

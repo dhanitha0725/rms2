@@ -4,6 +4,7 @@
     public class ReservationDataDto
     {
         public int ReservationId { get; set; }
+        public int FacilityId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public DateTime CreatedDate { get; set; }
@@ -28,6 +29,7 @@
         public List<PaymentDto>? Payments { get; set; }
         public List<ReservationPackageDto>? ReservedPackages { get; set; }
         public List<ReservationRoomDto>? ReservedRooms { get; set; }
+        public List<DocumentDetailsDto>? Documents { get; set; }
     }
 
     // reservation user details
@@ -43,6 +45,7 @@
     // reservation payment details
     public class PaymentDto
     {
+        public Guid paymentId { get; set; }
         public string OrderID { get; set; }
         public string Method { get; set; }
         public decimal? AmountPaid { get; set; }
@@ -63,5 +66,13 @@
     {
         public string PackageName { get; set; }
         public string FacilityName { get; set; }
+    }
+
+    // documents details
+    public class DocumentDetailsDto
+    {
+        public int DocumentId { get; set; }
+        public string DocumentType { get; set; }
+        public string Url { get; set; }
     }
 }
